@@ -1,5 +1,4 @@
 import * as Hapi from '@hapi/hapi';
-import * as Cors from '@hapi/cors'; // ✅ Import CORS plugin
 import { userRoute } from './src/userModule/userController';
 import { LeaveRequestRoute } from './src/leaveRequestModule/leaveRequestController';
 import { LeaveTypeRoute } from './src/leaveTypeModule/leaveTypeController';
@@ -18,25 +17,21 @@ const server = Hapi.server({
       credentials: true,
       headers: ['Accept', 'Content-Type', 'Authorization'],
       additionalHeaders: ['X-Requested-With'],
-      additionalExposedHeaders: ['Access-Control-Allow-Origin']
+      additionalExposedHeaders: ['Access-Control-Allow-Origin'],
     }
   }
 });
 
 const start = async () => {
   try {
-    await server.register(Cors); // ✅ Register the plugin
-
-    // ✅ Optional: Define global OPTIONS route to fix preflight failures
+    // ✅ Optional: handle preflight requests
     server.route({
       method: 'OPTIONS',
       path: '/{any*}',
-      handler: (request, h) => {
-        return h.response().code(200);
-      }
+      handler: (request, h) => h.response().code(200)
     });
 
-    // Register all API routes
+    // ✅ Register routes
     server.route(userRoute);
     server.route(LeaveRequestRoute);
     server.route(LeaveTypeRoute);
