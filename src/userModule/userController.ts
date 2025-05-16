@@ -41,14 +41,14 @@ export class UserController {
 
       const response = h.response({ message: 'Login successful', token })
         .state('role', token.role, {
-          isHttpOnly: true,
+          isHttpOnly: false,
           isSecure: process.env.NODE_ENV === 'production',
           path: '/',
           ttl: 60 * 60 * 1000, // 1 hour
           isSameSite:'None'
         })
         .state('auth_token', token.token, {
-          isHttpOnly: true,
+          isHttpOnly: false,
           isSecure: process.env.NODE_ENV === 'production',
           path: '/',
           ttl: 60 * 60 * 1000, // 1 hour

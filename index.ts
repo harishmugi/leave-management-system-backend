@@ -10,7 +10,7 @@ const server = Hapi.server({
     host: '0.0.0.0',
     routes: {
         cors: {
-            origin: ['http://localhost:3001'], // ✅ specific origin
+            origin: ['*'], // ✅ specific origin
             credentials: true                 // ✅ allow cookies
         }
     }
