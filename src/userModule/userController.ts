@@ -45,12 +45,14 @@ export class UserController {
           isSecure: process.env.NODE_ENV === 'production',
           path: '/',
           ttl: 60 * 60 * 1000, // 1 hour
+          isSameSite:'None'
         })
         .state('auth_token', token.token, {
           isHttpOnly: true,
           isSecure: process.env.NODE_ENV === 'production',
           path: '/',
           ttl: 60 * 60 * 1000, // 1 hour
+          isSameSite:'None'
         });
 
       return response.code(200);
