@@ -41,7 +41,7 @@ const leaveBalanceController_1 = require("./src/leaveBalanceModule/leaveBalanceC
 require("dotenv/config");
 const server = Hapi.server({
     port: parseInt(process.env.PORT || '5000'),
-    host: 'localhost',
+    host: '0.0.0.0',
     routes: {
         cors: {
             origin: ['*'], // ✅ specific origin
