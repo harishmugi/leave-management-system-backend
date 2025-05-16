@@ -5,19 +5,18 @@ import { LeaveTypeRoute } from './src/leaveTypeModule/leaveTypeController';
 import { LeaveBalanceRoute } from './src/leaveBalanceModule/leaveBalanceController';
 import 'dotenv/config';
 const server = Hapi.server({
-    port: parseInt(process.env.PORT || '5000'),
-    host: '0.0.0.0', // use 0.0.0.0 if deploying to Render
-    routes: {
-        cors: {
-            origin: [
-                'https://leave-management-system-frontend.vercel.app',
-                'https://leave-management-system-frontend-r480vqbxp-harishmugis-projects.vercel.app'
-            ],
-            credentials: true
-        }
+  port: parseInt(process.env.PORT || '5000'),
+  host: '0.0.0.0', // required for Render
+  routes: {
+    cors: {
+      origin: ['*'], // Or better: specify the allowed frontend domains
+      credentials: true,
+      headers: ['Accept', 'Content-Type', 'Authorization'],
+      additionalHeaders: ['X-Requested-With'],
+      additionalExposedHeaders: ['Access-Control-Allow-Origin'],
     }
+  }
 });
-
 
 // Register routes
 server.route(userRoute);
