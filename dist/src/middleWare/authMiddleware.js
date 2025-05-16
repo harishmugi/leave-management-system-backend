@@ -1,0 +1,80 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.handleToken = handleToken;
+exports.login = login;
+const bcrypt = require('bcryptjs');
+const jwt = __importStar(require("jsonwebtoken"));
+const connection_1 = require("../../db/connection"); // assuming this is where your TypeORM dataSource is configured
+const userEntity_1 = require("../userModule/userEntity"); // assuming you have an Employee entity
+const jwt_1 = require("../utils/jwt");
+async function handleToken(req) {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        throw new Error('Token missing or invalid format');
+    }
+    const token = authHeader.split(' ')[1];
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // Token is valid and not expired
+        return {
+            valid: true,
+            expired: false,
+            decoded,
+        };
+    }
+    catch (err) {
+        if (err.name === 'TokenExpiredError') {
+            throw new Error('Token expired. Please log in again.');
+        }
+        throw new Error('Invalid token.');
+    }
+}
+async function login(email, password) {
+    const employeeRepo = connection_1.dataSource.getRepository(userEntity_1.Employee);
+    const user = await employeeRepo.findOneBy({ email });
+    console.log("user" + user);
+    if (!user) {
+        throw new Error('User not found');
+    }
+    const isPasswordValid = password == user.password;
+    if (!isPasswordValid) {
+        throw new Error('Invalid password');
+    }
+    const role = user.role;
+    const token = await (0, jwt_1.generateJwt)(user);
+    console.log("generated" + token);
+    return { token, role };
+}
