@@ -7,7 +7,7 @@ import 'dotenv/config';
 
 const server = Hapi.server({
     port: parseInt(process.env.PORT || '5000'),
-    host: '0.0.0.0',
+    host: 'localhost',
     routes: {
         cors: {
             origin: ['*'], // ✅ specific origin

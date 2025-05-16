@@ -32,35 +32,39 @@ export class UserController {
     }
   }
 
-  // LOGIN HANDLER
   static async login_handler(req: Request, h: ResponseToolkit) {
     const userData = req.payload as LoginPayload;
     try {
-      // const user = await UserValidator.isUser(userData.email);
       const token = await login(userData.email, userData.password);
-
-      const response = h.response({ message: 'Login successful', token })
-        .state('role', token.role, {
-          isHttpOnly: false,
-          isSecure: process.env.NODE_ENV === 'production',
-          path: '/',
-          ttl: 60 * 60 * 1000, // 1 hour
-          isSameSite:'None'
-        })
-        .state('auth_token', token.token, {
-          isHttpOnly: false,
-          isSecure: process.env.NODE_ENV === 'production',
-          path: '/',
-          ttl: 60 * 60 * 1000, // 1 hour
-          isSameSite:'None'
-        });
-
+  
+      // Set the token and role in the response body, and in the cookies as well.
+      const response = h.response({
+        message: 'Login successful',
+        token: token.token,  // Send token in the response body
+        role: token.role,    // Send role in the response body
+      })
+      .state('role', token.role, {
+        isHttpOnly: false,
+        isSecure: process.env.NODE_ENV === 'production',
+        path: '/',
+        ttl: 60 * 60 * 1000, // 1 hour
+        isSameSite: 'None',
+      })
+      .state('auth_token', token.token, {
+        isHttpOnly: false,
+        isSecure: process.env.NODE_ENV === 'production',
+        path: '/',
+        ttl: 60 * 60 * 1000, // 1 hour
+        isSameSite: 'None',
+      });
+  
       return response.code(200);
     } catch (error: any) {
       console.error('Error:', error.message);
       return h.response({ error: error.message || 'Failed to login' }).code(401);
     }
   }
+  
 
   // GET EMPLOYEES
   static async getEmployees(request: Request, h: ResponseToolkit) {
