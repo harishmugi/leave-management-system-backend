@@ -131,6 +131,27 @@ export class UserController {
       return h.response({ error: 'Failed to delete employee' }).code(500);
     }
   }
+
+
+
+
+
+  // UserController.ts
+static async getCurrentUser(req: Request, h: ResponseToolkit) {
+  try {
+    const authHeader = req.headers['authorization'] || '';
+    const token = authHeader.split(' ')[1];
+    if (!token) return h.response({ error: 'No token' }).code(401);
+
+    const decoded = Jwt.verify(token, process.env.JWT_SECRET!) as DecodedToken;
+    const user = await UserService.getEmployee(decoded.email);
+
+    return h.response({ user }).code(200);
+  } catch (err) {
+    return h.response({ error: 'Invalid token' }).code(401);
+  }
+}
+
 }
 import { Employee } from './userEntity';
 
@@ -164,5 +185,10 @@ export const userRoute: ServerRoute[] = [
     method: 'DELETE',
     path: '/employees/{id}',
     handler: UserController.deleteEmployee,
-  },
+  },{
+    method: 'GET',
+    path: '/me',
+    handler: UserController.getCurrentUser,
+  }
+  
 ];
