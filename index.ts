@@ -12,7 +12,8 @@ const server = Hapi.server({
     cors: {
       origin: [
         'https://leave-management-system-frontend.vercel.app',
-        'https://leave-management-system-frontend-r480vqbxp-harishmugis-projects.vercel.app'
+        'https://leave-management-system-frontend-r480vqbxp-harishmugis-projects.vercel.app',
+        'https://leave-management-system-frontend-lac.vercel.app/'
       ],
       credentials: true,
       headers: ['Accept', 'Content-Type', 'Authorization'],

@@ -55,26 +55,29 @@ class UserController {
             return h.response({ error: error.message || 'Failed to create employee' }).code(400);
         }
     }
-    // LOGIN HANDLER
     static async login_handler(req, h) {
         const userData = req.payload;
         try {
-            // const user = await UserValidator.isUser(userData.email);
             const token = await (0, authMiddleware_1.login)(userData.email, userData.password);
-            const response = h.response({ message: 'Login successful', token })
+            // Set the token and role in the response body, and in the cookies as well.
+            const response = h.response({
+                message: 'Login successful',
+                token: token.token, // Send token in the response body
+                role: token.role, // Send role in the response body
+            })
                 .state('role', token.role, {
                 isHttpOnly: false,
                 isSecure: process.env.NODE_ENV === 'production',
                 path: '/',
                 ttl: 60 * 60 * 1000, // 1 hour
-                isSameSite: 'None'
+                isSameSite: 'None',
             })
                 .state('auth_token', token.token, {
                 isHttpOnly: false,
                 isSecure: process.env.NODE_ENV === 'production',
                 path: '/',
                 ttl: 60 * 60 * 1000, // 1 hour
-                isSameSite: 'None'
+                isSameSite: 'None',
             });
             return response.code(200);
         }
@@ -145,6 +148,21 @@ class UserController {
             return h.response({ error: 'Failed to delete employee' }).code(500);
         }
     }
+    // UserController.ts
+    static async getCurrentUser(req, h) {
+        try {
+            const authHeader = req.headers['authorization'] || '';
+            const token = authHeader.split(' ')[1];
+            if (!token)
+                return h.response({ error: 'No token' }).code(401);
+            const decoded = Jwt.verify(token, process.env.JWT_SECRET);
+            const user = await userServices_1.UserService.getEmployee(decoded.email);
+            return h.response({ user }).code(200);
+        }
+        catch (err) {
+            return h.response({ error: 'Invalid token' }).code(401);
+        }
+    }
 }
 exports.UserController = UserController;
 exports.userRoute = [
@@ -177,5 +195,9 @@ exports.userRoute = [
         method: 'DELETE',
         path: '/employees/{id}',
         handler: UserController.deleteEmployee,
-    },
+    }, {
+        method: 'GET',
+        path: '/me',
+        handler: UserController.getCurrentUser,
+    }
 ];

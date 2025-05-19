@@ -44,19 +44,31 @@ const server = Hapi.server({
     host: '0.0.0.0',
     routes: {
         cors: {
-            origin: ['http://localhost:3001'], // ✅ specific origin
-            credentials: true // ✅ allow cookies
+            origin: [
+                'https://leave-management-system-frontend.vercel.app',
+                'https://leave-management-system-frontend-r480vqbxp-harishmugis-projects.vercel.app',
+                'https://leave-management-system-frontend-lac.vercel.app/'
+            ],
+            credentials: true,
+            headers: ['Accept', 'Content-Type', 'Authorization'],
+            additionalHeaders: ['X-Requested-With'],
+            additionalExposedHeaders: ['Access-Control-Allow-Origin'],
         }
     }
 });
-// Register routes
-server.route(userController_1.userRoute);
-server.route(leaveRequestController_1.LeaveRequestRoute);
-server.route(leaveTypeController_1.LeaveTypeRoute);
-server.route(leaveBalanceController_1.LeaveBalanceRoute);
-// Start the server
 const start = async () => {
     try {
+        // ✅ Optional: handle preflight requests
+        server.route({
+            method: 'OPTIONS',
+            path: '/{any*}',
+            handler: (request, h) => h.response().code(200)
+        });
+        // ✅ Register routes
+        server.route(userController_1.userRoute);
+        server.route(leaveRequestController_1.LeaveRequestRoute);
+        server.route(leaveTypeController_1.LeaveTypeRoute);
+        server.route(leaveBalanceController_1.LeaveBalanceRoute);
         await server.start();
         console.log('✅ Server running on %s', server.info.uri);
     }
