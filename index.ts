@@ -15,7 +15,7 @@ const server: Hapi.Server = Hapi.server({
         'http://localhost:3001',
         'https://leave-management-system-frontend.vercel.app',
         'https://leave-management-system-frontend-r480vqbxp-harishmugis-projects.vercel.app',
-        'https://leave-management-system-frontend-lac.vercel.app'
+        'https://leave-management-system-frontend-psi.vercel.app'
       ],
       credentials: true,
       headers: ['Accept', 'Content-Type', 'Authorization'], // ✅ Allow Content-Type and other headers
@@ -35,7 +35,7 @@ const start = async () => {
         return h
           .response()
           .code(200)
-          .header('Access-Control-Allow-Origin', request.headers.origin || '*')
+          .header('Access-Control-Allow-Origin', request.headers.origin)
           .header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
           .header(
             'Access-Control-Allow-Headers',
