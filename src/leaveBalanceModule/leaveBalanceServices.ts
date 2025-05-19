@@ -81,7 +81,7 @@ console.log("hitted again")
     static async initializeLeaveBalancesForEmployee(employeeId: string) {
       const leaveTypeRepo = dataSource.getRepository(LeaveType);
       const leaveBalanceRepo = dataSource.getRepository(LeaveBalance);
-  
+  console.log("hitting ini")
       const leaveTypes = await leaveTypeRepo.find();
   
       const leaveBalances = leaveTypes.map(type => {

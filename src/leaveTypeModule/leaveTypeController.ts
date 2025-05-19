@@ -7,7 +7,7 @@ export class LeaveTypeController {
   // CREATE LEAVE TYPE REQUEST
   static async createLeaveType(request: Request, h: ResponseToolkit) {
   const leaveTypeData = request.payload as { leave_type: string[] };  // Array of leave types
-
+console.log("hittinng")
   try {
     // Validate if the leave type array is not empty
     if (!leaveTypeData.leave_type || leaveTypeData.leave_type.length === 0) {

@@ -62,6 +62,7 @@ export class UserService {
       await employeeRepository.save(employee);
 
       // 6. Initialize leave balances
+      
       await LeaveBalanceService.initializeLeaveBalancesForEmployee(employee.id);
 
       // 7. Generate and return token

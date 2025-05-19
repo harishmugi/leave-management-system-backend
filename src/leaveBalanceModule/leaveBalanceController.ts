@@ -57,6 +57,7 @@ static async createLeaveBalance(request: Request, h: ResponseToolkit) {
       if (!token) {
         return h.response({ error: 'No token provided' }).code(401);
       }
+      console.log("hitted balance")
       const decoded = Jwt.verify(token, process.env.JWT_SECRET!) as DecodedToken;
       console.log('Decoded Email:', decoded.userData.id);
       const userId = decoded.userData.id
@@ -64,8 +65,8 @@ static async createLeaveBalance(request: Request, h: ResponseToolkit) {
       const employee = await UserService.getEmployee(decoded.userData.email)
       console.log("employeeeeee//", employee.id)
       if (employee) {
-        const leaveBalances = await LeaveBalanceService.getAllLeaveBalance(employee.id);
-
+        const leaveBalances = await LeaveBalanceService.getAllLeaveBalance(userId);
+console.log(leaveBalances)
         return h.response(leaveBalances).code(200);
       }
     } catch (error) {
