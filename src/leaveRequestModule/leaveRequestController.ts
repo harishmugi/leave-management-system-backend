@@ -1,6 +1,6 @@
 import { Request, ResponseToolkit } from '@hapi/hapi';
 import * as Jwt from 'jsonwebtoken';
-import Joi = require("joi")
+import Joi = require("joi");
 import { LeaveRequestService } from './leaveRequestServices';
 
 interface DecodedToken {
@@ -39,12 +39,11 @@ export class LeaveRequestController {
     try {
       const decoded = await LeaveRequestController.getDecodedToken(request);
       const leaveData = request.payload as LeaveRequestPayload;
-
       leaveData['employee_id'] = decoded.userData.id;
 
       const leaveRequest = await LeaveRequestService.createLeaveRequest(leaveData);
       return h.response({ message: 'Leave request created', leaveRequest }).code(201);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating leave request:', error);
       return h.response({ error: 'Failed to create leave request' }).code(
         error.message === 'Unauthorized' ? 401 : 500
@@ -57,7 +56,7 @@ export class LeaveRequestController {
       const decoded = await LeaveRequestController.getDecodedToken(request);
       const leaveRequests = await LeaveRequestService.getLeaveRequestsForRole(decoded.userData.id);
       return h.response(leaveRequests).code(200);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching leave requests by role:', error);
       return h.response({ error: 'Failed to fetch leave requests' }).code(
         error.message === 'Unauthorized' ? 401 : 500
@@ -70,54 +69,53 @@ export class LeaveRequestController {
       const decoded = await LeaveRequestController.getDecodedToken(request);
       const leaveRequests = await LeaveRequestService.getLeaveRequestsForRole(decoded.userData.id);
       return h.response(leaveRequests).code(200);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching employee leave requests:', error);
       return h.response({ error: 'Failed to fetch employee leave requests' }).code(
         error.message === 'Unauthorized' ? 401 : 500
       );
     }
   }
-static async updateLeaveRequest(request: Request, h: ResponseToolkit) {
-  try {
-    // ✅ Verify JWT token to ensure the user is authenticated
-    const decoded = await LeaveRequestController.getDecodedToken(request);
-    console.log("hit update");
 
-    const leaveId = request.params.id;
-    const { id, approved } = request.payload as UpdateApprovalPayload;
-    console.log("Approver role:", id);
+  static async updateLeaveRequest(request: Request, h: ResponseToolkit) {
+    try {
+      const decoded = await LeaveRequestController.getDecodedToken(request);
+      const leaveId = request.params.id;
+      const { id, approved } = request.payload as UpdateApprovalPayload;
 
-    // ✅ Validate role is one of the allowed approvers
-    if (!['Manager', 'Hr', 'Director'].includes(id)) {
-      return h.response({ error: 'Invalid approver role' }).code(400);
+      if (!['Manager', 'Hr', 'Director'].includes(id)) {
+        return h.response({ error: 'Invalid approver role' }).code(400);
+      }
+
+      const approvalStatus = approved ? 'Approved' : 'Rejected';
+      const updateData: Record<string, string> = {};
+
+      switch (id) {
+        case 'Manager':
+          updateData.manager_approval = approvalStatus;
+          break;
+        case 'Hr':
+          updateData.HR_approval = approvalStatus;
+          break;
+        case 'Director':
+          updateData.director_approval = approvalStatus;
+          break;
+      }
+
+      const updatedLeave = await LeaveRequestService.updateLeaveRequest(leaveId, updateData);
+      
+      if (!updatedLeave) {
+        return h.response({ error: 'Leave request not found or unable to update' }).code(404);
+      }
+
+      return h.response(updatedLeave).code(200);
+    } catch (error: any) {
+      console.error('Error updating leave request:', error);
+      return h.response({ error: 'Failed to update leave request' }).code(
+        error.message === 'Unauthorized' ? 401 : 500
+      );
     }
-
-    const approvalStatus = approved ? 'Approved' : 'Rejected';
-    const updateData: Partial<any> = {};
-
-    switch (id) {
-      case 'Manager':
-        updateData.manager_approval = approvalStatus;
-        break;
-      case 'Hr':
-        updateData.HR_approval = approvalStatus;
-        break;
-      case 'Director':
-        updateData.director_approval = approvalStatus;
-        break;
-    }
-
-    const updatedLeave = await LeaveRequestService.updateLeaveRequest(leaveId, updateData);
-    return h.response(updatedLeave).code(200);
-
-  } catch (error) {
-    console.error('Error updating leave request:', error);
-    return h.response({ error: 'Failed to update leave request' }).code(
-      error.message === 'Unauthorized' ? 401 : 500
-    );
   }
-}
-
 
   static async deleteLeaveRequest(request: Request, h: ResponseToolkit) {
     try {
@@ -137,6 +135,7 @@ static async updateLeaveRequest(request: Request, h: ResponseToolkit) {
 }
 import { ServerRoute } from '@hapi/hapi';
 
+
 export const LeaveRequestRoute: ServerRoute[] = [
   {
     method: 'POST',
@@ -148,7 +147,7 @@ export const LeaveRequestRoute: ServerRoute[] = [
           startDate: Joi.string().required(),
           endDate: Joi.string().required(),
           reason: Joi.string().required(),
-          leave_type_id: Joi.number().required(), // <-- updated
+          leave_type_id: Joi.number().required(),
         }),
         failAction: (request, h, err) => {
           console.error('Validation error:', err?.message);

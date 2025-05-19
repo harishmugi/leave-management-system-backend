@@ -87,31 +87,34 @@ class LeaveRequestController {
     }
     static async updateLeaveRequest(request, h) {
         try {
+            const decoded = await LeaveRequestController.getDecodedToken(request);
             const leaveId = request.params.id;
             const { id, approved } = request.payload;
-            console.log(id);
             if (!['Manager', 'Hr', 'Director'].includes(id)) {
                 return h.response({ error: 'Invalid approver role' }).code(400);
             }
-            const approval = approved ? 'Approved' : 'Rejected';
+            const approvalStatus = approved ? 'Approved' : 'Rejected';
             const updateData = {};
             switch (id) {
                 case 'Manager':
-                    updateData.manager_approval = approval;
+                    updateData.manager_approval = approvalStatus;
                     break;
                 case 'Hr':
-                    updateData.HR_approval = approval;
+                    updateData.HR_approval = approvalStatus;
                     break;
                 case 'Director':
-                    updateData.director_approval = approval;
+                    updateData.director_approval = approvalStatus;
                     break;
             }
             const updatedLeave = await leaveRequestServices_1.LeaveRequestService.updateLeaveRequest(leaveId, updateData);
+            if (!updatedLeave) {
+                return h.response({ error: 'Leave request not found or unable to update' }).code(404);
+            }
             return h.response(updatedLeave).code(200);
         }
         catch (error) {
             console.error('Error updating leave request:', error);
-            return h.response({ error: 'Failed to update leave request' }).code(500);
+            return h.response({ error: 'Failed to update leave request' }).code(error.message === 'Unauthorized' ? 401 : 500);
         }
     }
     static async deleteLeaveRequest(request, h) {
@@ -141,7 +144,7 @@ exports.LeaveRequestRoute = [
                     startDate: Joi.string().required(),
                     endDate: Joi.string().required(),
                     reason: Joi.string().required(),
-                    leave_type_id: Joi.number().required(), // <-- updated
+                    leave_type_id: Joi.number().required(),
                 }),
                 failAction: (request, h, err) => {
                     console.error('Validation error:', err?.message);

@@ -60,6 +60,7 @@ class LeaveBalanceService {
     static async initializeLeaveBalancesForEmployee(employeeId) {
         const leaveTypeRepo = connection_1.dataSource.getRepository(leaveTypeEntity_1.LeaveType);
         const leaveBalanceRepo = connection_1.dataSource.getRepository(leaveBalanceEntity_1.LeaveBalance);
+        console.log("hitting ini");
         const leaveTypes = await leaveTypeRepo.find();
         const leaveBalances = leaveTypes.map(type => {
             const balance = new leaveBalanceEntity_1.LeaveBalance();
