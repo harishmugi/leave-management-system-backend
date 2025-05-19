@@ -16,7 +16,9 @@ const server:Hapi.Server = Hapi.server({
         'https://leave-management-system-frontend-r480vqbxp-harishmugis-projects.vercel.app',
         'https://leave-management-system-frontend-lac.vercel.app/'
       ],
-      credentials: true,
+      credentials: true,     
+      additionalHeaders: ['Content-Type'], // 👈 Add this line
+
     }
   }
 });
