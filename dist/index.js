@@ -45,14 +45,12 @@ const server = Hapi.server({
     routes: {
         cors: {
             origin: [
+                'http://localhost:3001',
                 'https://leave-management-system-frontend.vercel.app',
                 'https://leave-management-system-frontend-r480vqbxp-harishmugis-projects.vercel.app',
                 'https://leave-management-system-frontend-lac.vercel.app/'
             ],
             credentials: true,
-            headers: ['Accept', 'Content-Type', 'Authorization'],
-            additionalHeaders: ['X-Requested-With'],
-            additionalExposedHeaders: ['Access-Control-Allow-Origin'],
         }
     }
 });
@@ -76,4 +74,8 @@ const start = async () => {
         console.error('❌ Error starting server:', err);
     }
 };
+process.on('unhandledRejection', (err) => {
+    console.log(err);
+    process.exit(1);
+});
 start();

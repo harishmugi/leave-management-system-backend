@@ -5,20 +5,18 @@ import { LeaveTypeRoute } from './src/leaveTypeModule/leaveTypeController';
 import { LeaveBalanceRoute } from './src/leaveBalanceModule/leaveBalanceController';
 import 'dotenv/config';
 
-const server = Hapi.server({
+const server:Hapi.Server = Hapi.server({
   port: parseInt(process.env.PORT || '5000'),
   host: '0.0.0.0',
   routes: {
     cors: {
       origin: [
+        'http://localhost:3001',
         'https://leave-management-system-frontend.vercel.app',
         'https://leave-management-system-frontend-r480vqbxp-harishmugis-projects.vercel.app',
         'https://leave-management-system-frontend-lac.vercel.app/'
       ],
       credentials: true,
-      headers: ['Accept', 'Content-Type', 'Authorization'],
-      additionalHeaders: ['X-Requested-With'],
-      additionalExposedHeaders: ['Access-Control-Allow-Origin'],
     }
   }
 });
@@ -44,5 +42,10 @@ const start = async () => {
     console.error('❌ Error starting server:', err);
   }
 };
+
+process.on('unhandledRejection',(err)=>{
+  console.log(err)
+  process.exit(1);
+})
 
 start();
