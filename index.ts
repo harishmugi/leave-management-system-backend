@@ -20,7 +20,8 @@ const server: Hapi.Server = Hapi.server({
       credentials: true,
       headers: ['Accept', 'Content-Type', 'Authorization'],
       additionalHeaders: ['Content-Type'],
-      additionalExposedHeaders: ['Set-Cookie'],
+      additionalExposedHeaders: ['Set-Cookie'],   
+
     },
   },
 });
@@ -36,9 +37,8 @@ const start = async () => {
           .response()
           .code(200)
           .header('Access-Control-Allow-Origin', request.headers.origin || '*') // Dynamically set Access-Control-Allow-Origin
-          .header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH') // Allow methods
           .header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization') // Allow headers
-          .header('Access-Control-Allow-Credentials', 'true'); // Allow credentials
+          .header('Access-Control-Allow-Credentials', 'true'); // Allow credentials (cookies, etc.)
       },
     });
 
