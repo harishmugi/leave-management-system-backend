@@ -33,6 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+// index.ts or server.ts
 const Hapi = __importStar(require("@hapi/hapi"));
 const userController_1 = require("./src/userModule/userController");
 const leaveRequestController_1 = require("./src/leaveRequestModule/leaveRequestController");
@@ -48,35 +49,47 @@ const server = Hapi.server({
                 'http://localhost:3001',
                 'https://leave-management-system-frontend.vercel.app',
                 'https://leave-management-system-frontend-r480vqbxp-harishmugis-projects.vercel.app',
-                'https://leave-management-system-frontend-lac.vercel.app/'
+                'https://leave-management-system-frontend-lac.vercel.app'
             ],
             credentials: true,
-            additionalHeaders: ['Content-Type'], // 👈 Add this line
-        }
-    }
+            headers: ['Accept', 'Content-Type', 'Authorization'], // ✅ Allow Content-Type and other headers
+            additionalHeaders: ['Content-Type'], // ✅ You can include this for extra safety
+            additionalExposedHeaders: ['Set-Cookie'], // If cookies are being used
+        },
+    },
 });
 const start = async () => {
     try {
-        // ✅ Optional: handle preflight requests
+        // ✅ Handle all OPTIONS requests (for CORS preflight)
         server.route({
             method: 'OPTIONS',
             path: '/{any*}',
-            handler: (request, h) => h.response().code(200)
+            handler: (request, h) => {
+                return h
+                    .response()
+                    .code(200)
+                    .header('Access-Control-Allow-Origin', request.headers.origin || '*')
+                    .header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+                    .header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
+                    .header('Access-Control-Allow-Credentials', 'true');
+            },
         });
-        // ✅ Register routes
+        // ✅ Register your app routes
         server.route(userController_1.userRoute);
         server.route(leaveRequestController_1.LeaveRequestRoute);
         server.route(leaveTypeController_1.LeaveTypeRoute);
         server.route(leaveBalanceController_1.LeaveBalanceRoute);
         await server.start();
-        console.log('✅ Server running on %s', server.info.uri);
+        console.log('✅ Server running at:', server.info.uri);
     }
     catch (err) {
-        console.error('❌ Error starting server:', err);
+        console.error('❌ Server failed to start:', err);
+        process.exit(1);
     }
 };
+// Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
-    console.log(err);
+    console.error('Unhandled Rejection:', err);
     process.exit(1);
 });
 start();
