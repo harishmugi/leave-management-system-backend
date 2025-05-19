@@ -79,7 +79,7 @@ export class LeaveRequestController {
   }
 
   static async updateLeaveRequest(request: Request, h: ResponseToolkit) {
-    try {
+    try {console.log("hit update")
       const leaveId = request.params.id;
       const { id, approved } = request.payload as UpdateApprovalPayload;
       console.log(id)
