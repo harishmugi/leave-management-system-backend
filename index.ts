@@ -12,22 +12,22 @@ const server: Hapi.Server = Hapi.server({
   routes: {
     cors: {
       origin: [
-        'http://localhost:3001',
-        'https://leave-management-system-frontend.vercel.app',
-        'https://leave-management-system-frontend-r480vqbxp-harishmugis-projects.vercel.app',
-        'https://leave-management-system-frontend-psi.vercel.app'
+        'http://localhost:3001', // Development frontend
+        'https://leave-management-system-frontend.vercel.app', // Prod frontend 1
+        'https://leave-management-system-frontend-r480vqbxp-harishmugis-projects.vercel.app', // Prod frontend 2
+        'https://leave-management-system-frontend-psi.vercel.app' // Prod frontend 3
       ],
       credentials: true,
-      headers: ['Accept', 'Content-Type', 'Authorization'], // ✅ Allow Content-Type and other headers
-      additionalHeaders: ['Content-Type'], // ✅ You can include this for extra safety
-      additionalExposedHeaders: ['Set-Cookie'], // If cookies are being used
+      headers: ['Accept', 'Content-Type', 'Authorization'],
+      additionalHeaders: ['Content-Type'],
+      additionalExposedHeaders: ['Set-Cookie'],
     },
   },
 });
 
 const start = async () => {
   try {
-    // ✅ Handle all OPTIONS requests (for CORS preflight)
+    // Handle OPTIONS requests for CORS preflight
     server.route({
       method: 'OPTIONS',
       path: '/{any*}',
@@ -35,22 +35,20 @@ const start = async () => {
         return h
           .response()
           .code(200)
-          .header('Access-Control-Allow-Origin', request.headers.origin)
-          .header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS,PATCH')
-          .header(
-            'Access-Control-Allow-Headers',
-            'Origin, X-Requested-With, Content-Type, Accept, Authorization'
-          )
-          .header('Access-Control-Allow-Credentials', 'true');
+          .header('Access-Control-Allow-Origin', request.headers.origin || '*') // Dynamically set Access-Control-Allow-Origin
+          .header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH') // Allow methods
+          .header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization') // Allow headers
+          .header('Access-Control-Allow-Credentials', 'true'); // Allow credentials
       },
     });
 
-    // ✅ Register your app routes
+    // Register your app routes
     server.route(userRoute);
     server.route(LeaveRequestRoute);
     server.route(LeaveTypeRoute);
     server.route(LeaveBalanceRoute);
 
+    // Start the server
     await server.start();
     console.log('✅ Server running at:', server.info.uri);
   } catch (err) {
