@@ -14,6 +14,9 @@ const typeorm_1 = require("typeorm");
 const leaveRequestEntity_1 = require("../leaveRequestModule/leaveRequestEntity");
 const leaveBalanceEntity_1 = require("../leaveBalanceModule/leaveBalanceEntity"); // Add correct path
 let LeaveType = class LeaveType {
+    static find(arg0) {
+        throw new Error('Method not implemented.');
+    }
 };
 exports.LeaveType = LeaveType;
 __decorate([
