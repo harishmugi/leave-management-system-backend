@@ -76,7 +76,7 @@ export class LeaveRequestService {
     static async getAllLeaveRequest(employeeIds: string[]) {
         const repo = dataSource.getRepository(LeaveRequest);
         return repo.find({
-            where: { employee: { id: In(employeeIds) } },
+            where: { employee: { id: In(employeeIds) },status:"Pending" },
             relations: ['employee', 'leaveType'],
             order: { raisedDate: 'DESC' }
         });
@@ -104,7 +104,7 @@ export class LeaveRequestService {
 
         if (role === 'Manager') {
             const employees = await employeeRepo.find({
-                where: { manager: { id: roleEmployee.id } }
+                where: { manager: { id: roleEmployee.id, }, }
             });
             const employeeIds = employees.map(emp => emp.id);
             console.log('Direct reports:', employeeIds);
