@@ -77,38 +77,47 @@ export class LeaveRequestController {
       );
     }
   }
+static async updateLeaveRequest(request: Request, h: ResponseToolkit) {
+  try {
+    // ✅ Verify JWT token to ensure the user is authenticated
+    const decoded = await LeaveRequestController.getDecodedToken(request);
+    console.log("hit update");
 
-  static async updateLeaveRequest(request: Request, h: ResponseToolkit) {
-    try {console.log("hit update")
-      const leaveId = request.params.id;
-      const { id, approved } = request.payload as UpdateApprovalPayload;
-      console.log(id)
-      if (!['Manager', 'Hr', 'Director'].includes(id)) {
-        return h.response({ error: 'Invalid approver role' }).code(400);
-      }
+    const leaveId = request.params.id;
+    const { id, approved } = request.payload as UpdateApprovalPayload;
+    console.log("Approver role:", id);
 
-      const approval = approved ? 'Approved' : 'Rejected';
-      const updateData: Partial<any> = {};
-
-      switch (id) {
-        case 'Manager':
-          updateData.manager_approval = approval;
-          break;
-        case 'Hr':
-          updateData.HR_approval = approval;
-          break;
-        case 'Director':
-          updateData.director_approval = approval;
-          break;
-      }
-
-      const updatedLeave = await LeaveRequestService.updateLeaveRequest(leaveId, updateData);
-      return h.response(updatedLeave).code(200);
-    } catch (error) {
-      console.error('Error updating leave request:', error);
-      return h.response({ error: 'Failed to update leave request' }).code(500);
+    // ✅ Validate role is one of the allowed approvers
+    if (!['Manager', 'Hr', 'Director'].includes(id)) {
+      return h.response({ error: 'Invalid approver role' }).code(400);
     }
+
+    const approvalStatus = approved ? 'Approved' : 'Rejected';
+    const updateData: Partial<any> = {};
+
+    switch (id) {
+      case 'Manager':
+        updateData.manager_approval = approvalStatus;
+        break;
+      case 'Hr':
+        updateData.HR_approval = approvalStatus;
+        break;
+      case 'Director':
+        updateData.director_approval = approvalStatus;
+        break;
+    }
+
+    const updatedLeave = await LeaveRequestService.updateLeaveRequest(leaveId, updateData);
+    return h.response(updatedLeave).code(200);
+
+  } catch (error) {
+    console.error('Error updating leave request:', error);
+    return h.response({ error: 'Failed to update leave request' }).code(
+      error.message === 'Unauthorized' ? 401 : 500
+    );
   }
+}
+
 
   static async deleteLeaveRequest(request: Request, h: ResponseToolkit) {
     try {
