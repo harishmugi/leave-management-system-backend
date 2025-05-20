@@ -68,6 +68,8 @@ export class LeaveRequestController {
     try {
       const decoded = await LeaveRequestController.getDecodedToken(request);
       const leaveRequests = await LeaveRequestService.getLeaveRequest(decoded.userData.id);
+      console.log('leaveRequests',leaveRequests)
+      console.log('decoded',decoded)
       return h.response(leaveRequests).code(200);
     } catch (error: any) {
       console.error('Error fetching employee leave requests:', error);
