@@ -45,7 +45,7 @@ export class LeaveRequestService {
           employee: { id: leaveRequestData.employee_id },
           startDate: LessThanOrEqual(endDate),
           endDate: MoreThanOrEqual(startDate),
-          status: Not(In([APPROVAL.Rejected, APPROVAL.Cancelled])),
+          status: Not(In([APPROVAL.Rejected, APPROVAL.Cancelled])) 
         },
       });
 
@@ -147,14 +147,8 @@ export class LeaveRequestService {
       });
     } else if (role === 'HR') {
       // HR views leave requests approved by Manager and pending HR approval
-      const reports = await employeeRepo.find({
-        where: { HR: { id: currentUser.id } },
-      });
-      const reportIds = reports.map((emp) => emp.id);
-
       return leaveRepo.find({
         where: {
-          employee: { id: In(reportIds) },
           manager_approval: APPROVAL.Approved,
           HR_approval: APPROVAL.Pending,
         },
