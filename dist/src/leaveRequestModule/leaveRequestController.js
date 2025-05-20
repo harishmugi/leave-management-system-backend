@@ -77,7 +77,9 @@ class LeaveRequestController {
     static async getLeaveRequestByEmployee(request, h) {
         try {
             const decoded = await LeaveRequestController.getDecodedToken(request);
-            const leaveRequests = await leaveRequestServices_1.LeaveRequestService.getLeaveRequestsForRole(decoded.userData.id);
+            const leaveRequests = await leaveRequestServices_1.LeaveRequestService.getLeaveRequest(decoded.userData.id);
+            console.log('leaveRequests', leaveRequests);
+            console.log('decoded', decoded);
             return h.response(leaveRequests).code(200);
         }
         catch (error) {
