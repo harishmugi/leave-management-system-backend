@@ -67,7 +67,7 @@ export class LeaveRequestController {
   static async getLeaveRequestByEmployee(request: Request, h: ResponseToolkit) {
     try {
       const decoded = await LeaveRequestController.getDecodedToken(request);
-      const leaveRequests = await LeaveRequestService.getLeaveRequestsForRole(decoded.userData.id);
+      const leaveRequests = await LeaveRequestService.getLeaveRequest(decoded.userData.id);
       return h.response(leaveRequests).code(200);
     } catch (error: any) {
       console.error('Error fetching employee leave requests:', error);
