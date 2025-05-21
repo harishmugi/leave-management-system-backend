@@ -27,10 +27,10 @@ export async function parseExcel(buffer: Buffer): Promise<EmployeeData[]> {
 
     // Normalize row.values to an array:
     const valuesArray = Array.isArray(row.values) ? row.values : Object.values(row.values);
-
+console.log("valuesArray",valuesArray)
     // Remove the first element (index 0) which is empty for ExcelJS row.values
     const rowData = valuesArray.slice(1);
-
+console.log("rowData",rowData)
     // Now destructure safely
     const [email, fullname, password, role, managerEmail, hrEmail, directorEmail] = rowData as string[];
 
@@ -45,6 +45,8 @@ export async function parseExcel(buffer: Buffer): Promise<EmployeeData[]> {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });
+console.log('excel parces', employees)
+
   });
 
   return employees;

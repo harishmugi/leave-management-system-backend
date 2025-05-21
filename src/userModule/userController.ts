@@ -240,24 +240,34 @@ export const userRoute: ServerRoute[] = [
 
 
 
+export const uploadHandler = async (req: Request, h: ResponseToolkit) => {
+  try {
+    const file = (req.payload as any).file;
+
+    if (!file || !file._data) {
+      return h.response({ error: 'No file uploaded' }).code(400);
+    }
 
     
-export const uploadHandler = async (req: Request, h: ResponseToolkit) => {
-      const file = (req.payload as any).file;
-    
-      if (!file || !file._data) {
-        return h.response({ error: 'No file uploaded' }).code(400);
-      }
-    
-      const employees = await parseExcel(file._data);
-      await employeeQueue.add('bulk-create', employees, {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 5000 },
-      });
-    
-      return h.response({ message: 'Employees processing started' }).code(202);
-    };
-    
+    const employees = await parseExcel(file._data);
+    console.log(`📊 Parsed ${employees.length} employees from Excel`);
+
+    if (!employees || employees.length === 0) {
+      return h.response({ error: 'No valid employees found in file' }).code(400);
+    }
+
+    await employeeQueue.add('bulk-create', employees, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 5000 },
+    });
+
+    return h.response({ message: 'Employees processing started' }).code(202);
+  } catch (error) {
+    console.error('❌ Upload error:', error);
+    return h.response({ error: 'Failed to process file' }).code(500);
+  }
+};
+
     
     
     
