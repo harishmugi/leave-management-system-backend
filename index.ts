@@ -78,7 +78,7 @@
 import * as Hapi from '@hapi/hapi'
 import { Server } from '@hapi/hapi'
 import { dataSource } from './db/connection'
-import { userRoute } from './src/userModule/userController';
+import { uploadRoute, userRoute } from './src/userModule/userController';
 import { LeaveRequestRoute } from './src/leaveRequestModule/leaveRequestController';
 import { LeaveTypeRoute } from './src/leaveTypeModule/leaveTypeController';
 import { LeaveBalanceRoute } from './src/leaveBalanceModule/leaveBalanceController';
@@ -117,7 +117,7 @@ const init = async () => {
     ...LeaveBalanceRoute,
     ...LeaveRequestRoute,
     ...LeaveTypeRoute,
-    ...userRoute
+    ...userRoute,uploadRoute
   ])
 
   await server.start();

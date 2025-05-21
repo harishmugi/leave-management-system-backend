@@ -81,6 +81,7 @@ export class LeaveRequestController {
 
   static async updateLeaveRequest(request: Request, h: ResponseToolkit) {
     try {
+      
       const decoded = await LeaveRequestController.getDecodedToken(request);
       const leaveId = request.params.id;
       const { id, approved } = request.payload as UpdateApprovalPayload;

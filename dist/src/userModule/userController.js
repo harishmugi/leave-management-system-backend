@@ -33,11 +33,13 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.userRoute = exports.UserController = void 0;
+exports.uploadRoute = exports.uploadHandler = exports.userRoute = exports.UserController = void 0;
 const userServices_1 = require("./userServices");
 const userValidator_1 = require("./userValidator");
 const Jwt = __importStar(require("jsonwebtoken"));
 const authMiddleware_1 = require("../middleWare/authMiddleware");
+const exelParser_1 = require("../utils/exelParser");
+const employeeQueue_1 = require("../queue/employeeQueue");
 class UserController {
     // CREATE EMPLOYEE
     static async createEmployee(request, h) {
@@ -201,3 +203,30 @@ exports.userRoute = [
         handler: UserController.getCurrentUser,
     }
 ];
+const uploadHandler = async (req, h) => {
+    const file = req.payload.file;
+    if (!file || !file._data) {
+        return h.response({ error: 'No file uploaded' }).code(400);
+    }
+    const employees = await (0, exelParser_1.parseExcel)(file._data);
+    await employeeQueue_1.employeeQueue.add('bulk-create', employees, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+    });
+    return h.response({ message: 'Employees processing started' }).code(202);
+};
+exports.uploadHandler = uploadHandler;
+exports.uploadRoute = {
+    method: 'POST',
+    path: '/employees/bulk-upload',
+    options: {
+        payload: {
+            output: 'stream',
+            parse: true,
+            allow: 'multipart/form-data',
+            maxBytes: 10 * 1024 * 1024, // 10MB
+            multipart: true,
+        },
+    },
+    handler: exports.uploadHandler,
+};

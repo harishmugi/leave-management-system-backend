@@ -137,7 +137,7 @@ const init = async () => {
         ...leaveBalanceController_1.LeaveBalanceRoute,
         ...leaveRequestController_1.LeaveRequestRoute,
         ...leaveTypeController_1.LeaveTypeRoute,
-        ...userController_1.userRoute
+        ...userController_1.userRoute, userController_1.uploadRoute
     ]);
     await server.start();
     console.log("server runs on ", server.info.uri);

@@ -5,6 +5,11 @@ import { UserValidator } from './userValidator';
 import * as Jwt from 'jsonwebtoken';
 import { login } from '../middleWare/authMiddleware';
 
+
+
+import { parseExcel } from '../utils/exelParser' ;
+import { employeeQueue } from '../queue/employeeQueue';
+
 interface DecodedToken extends Jwt.JwtPayload {
   email: string;
 }
@@ -156,6 +161,39 @@ static async getCurrentUser(req: Request, h: ResponseToolkit) {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 import { Employee } from './userEntity';
 
@@ -196,3 +234,50 @@ export const userRoute: ServerRoute[] = [
   }
   
 ];
+
+
+
+
+
+
+
+    
+export const uploadHandler = async (req: Request, h: ResponseToolkit) => {
+      const file = (req.payload as any).file;
+    
+      if (!file || !file._data) {
+        return h.response({ error: 'No file uploaded' }).code(400);
+      }
+    
+      const employees = await parseExcel(file._data);
+      await employeeQueue.add('bulk-create', employees, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+      });
+    
+      return h.response({ message: 'Employees processing started' }).code(202);
+    };
+    
+    
+    
+    
+    
+    
+    
+    
+    export const uploadRoute: ServerRoute = {
+      method: 'POST',
+      path: '/employees/bulk-upload',
+      options: {
+        payload: {
+          output: 'stream',
+          parse: true,
+          allow: 'multipart/form-data',
+          maxBytes: 10 * 1024 * 1024, // 10MB
+          multipart: true,
+        },
+      },
+      handler: uploadHandler,
+    };
+    
+    
