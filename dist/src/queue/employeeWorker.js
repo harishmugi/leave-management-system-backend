@@ -23,4 +23,5 @@ exports.employeeWorker = new bullmq_1.Worker('employee-create-queue', async (job
     concurrency: 5,
     removeOnComplete: { count: 0 },
     removeOnFail: { count: 3 },
-});
+}); // index.ts or worker.ts
+console.log('👷 Worker started...');

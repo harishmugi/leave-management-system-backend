@@ -3,7 +3,6 @@ import { redisConnection } from './employeeQueue';
 import { UserService } from '../userModule/userServices';
 import { EmployeeData } from '../userModule/userServices';
 import { UserValidator } from '../userModule/userValidator';
-
 export const employeeWorker = new Worker(
   'employee-create-queue',
   async (job: Job) => {
@@ -26,4 +25,7 @@ export const employeeWorker = new Worker(
     removeOnComplete: { count: 0 },
     removeOnFail: { count: 3 },
   }
-);
+);// index.ts or worker.ts
+
+console.log('👷 Worker started...');
+
