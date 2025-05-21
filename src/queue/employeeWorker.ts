@@ -1,31 +1,28 @@
-import { Worker, Job } from 'bullmq';
+import { Worker } from 'bullmq';
+import { employeeQueue, connectionOptions } from './employeeQueue';
 import { UserService } from '../userModule/userServices';
-import { EmployeeData } from '../userModule/userServices';
-import { UserValidator } from '../userModule/userValidator';
 
-export const employeeWorker = new Worker(
-  'employee-create-queue',
-  async (job: Job) => {
-    const employees: EmployeeData[] = job.data;
+const worker = new Worker('employee-create-queue', async job => {
+  if (job.name === 'bulk-create') {
+    const employees = job.data;
+    console.log(`Processing ${employees.length} employees in bulk-create job`);
 
     for (const emp of employees) {
       try {
-        await UserValidator.checkUserAlreadyExist(emp.email);
         await UserService.createEmployee(emp);
-        console.log(`✅ Created employee: ${emp.email}`);
       } catch (err) {
-        console.error(`❌ Error creating employee ${emp.email}:`, err);
+        console.error(`Failed to create employee ${emp.email}`, err);
       }
     }
-  },
-  {
-    connection: {
-      url: process.env.REDIS_URL,
-    },
-    concurrency: 5,
-    removeOnComplete: { count: 0 },
-    removeOnFail: { count: 3 },
   }
-);
+}, {
+  connection: connectionOptions
+});
 
-console.log('👷 Worker started...');
+worker.on('completed', (job) => {
+  console.log(`Job ${job.id} completed`);
+});
+
+worker.on('failed', (job, err) => {
+  console.error(`Job ${job?.id} failed:`, err);
+});
