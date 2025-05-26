@@ -56,7 +56,7 @@ const dataSource = new typeorm_1.DataSource({
 });
 exports.dataSource = dataSource;
 dataSource.initialize().then(() => {
-    console.log("databasde run aaguthu !");
+    console.log("database is running !");
 }).catch((err) => {
-    console.log("erroe adikkuthu : " + err);
+    console.log("error " + err);
 });

@@ -120,7 +120,8 @@ const init = async () => {
                 origin: ['http://localhost:3001',
                     'https://leave-management-system-frontend.vercel.app',
                     'https://leave-management-system-frontend-r480vqbxp-harishmugis-projects.vercel.app',
-                    'https://leave-management-system-frontend-psi.vercel.app'
+                    'https://leave-management-system-frontend-psi.vercel.app',
+                    'https://leave-management-system-frontend-mznds8m7u-harishmugis-projects.vercel.app' // ✅ NEW ONE
                 ],
                 credentials: true
             }

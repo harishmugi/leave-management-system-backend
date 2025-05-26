@@ -19,19 +19,15 @@ async function parseExcel(buffer) {
     const employees = [];
     worksheet.eachRow((row, index) => {
         if (index === 1)
-            return; // skip header
-        // ExcelJS row.values is an array starting at index 1 (0 is empty)
+            return; // Skip header
         const rowData = row.values;
         const email = normalizeCellValue(rowData[1]);
         const fullname = normalizeCellValue(rowData[2]);
         const password = normalizeCellValue(rowData[3]);
         const role = normalizeCellValue(rowData[4]);
         const managerEmail = normalizeCellValue(rowData[5]);
-        const hrEmail = normalizeCellValue(rowData[6]);
-        const directorEmail = normalizeCellValue(rowData[7]);
-        // Skip if email or fullname is missing
-        if (!email || !fullname) {
-            console.warn(`Skipping row ${index} due to missing email or fullname`);
+        if (!email || !fullname || !password || !role) {
+            console.warn(`⚠️ Skipping row ${index} - Missing required fields`);
             return;
         }
         employees.push({
@@ -40,10 +36,8 @@ async function parseExcel(buffer) {
             password,
             role,
             managerEmail: managerEmail || null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
         });
     });
-    console.log('Parsed employees:', employees);
+    console.log('📊 Parsed employees:', employees);
     return employees;
 }

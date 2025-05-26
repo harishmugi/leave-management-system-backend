@@ -60,7 +60,7 @@ class LeaveRequestService {
                 where: {
                     employee_id: leaveRequestData.employee_id,
                     leave_type_id: leaveRequestData.leave_type_id,
-                },
+                }
             });
             if (days > available[0].remaining_leave) {
                 throw new Error(`You can only take ${available[0].remaining_leave} day(s) of leave.`);
@@ -224,9 +224,7 @@ class LeaveRequestService {
         if ([manager_approval, HR_approval, director_approval].includes(APPROVAL.Rejected)) {
             updated.status = APPROVAL.Rejected;
         }
-        else if ((manager_approval === APPROVAL.Approved || manager_approval === APPROVAL.NoManager) &&
-            HR_approval === APPROVAL.Approved &&
-            director_approval === APPROVAL.Approved) {
+        else if ((manager_approval === APPROVAL.Approved || manager_approval === APPROVAL.NoManager) && (HR_approval === APPROVAL.Approved || HR_approval === APPROVAL.NoManager) && (director_approval === APPROVAL.Approved || director_approval === APPROVAL.NoManager)) {
             const days = (0, date_fns_1.differenceInCalendarDays)(new Date(request.endDate), new Date(request.startDate)) + 1;
             const balance = await leaveBalanceController_1.LeaveBalanceController.patchLeaveBalance(updated.employee.id, updated.leaveType.id, days);
             if (balance < days)
@@ -249,7 +247,7 @@ class LeaveRequestService {
         const userRepo = connection_1.dataSource.getRepository(userEntity_1.Employee);
         // Get the logged-in user
         const user = await userRepo.findOne({
-            where: { id: userId, soft_delete: false },
+            where: { id: userId },
             relations: ['manager'],
         });
         if (!user)
@@ -282,7 +280,6 @@ class LeaveRequestService {
             leaveRequests = await repo.find({
                 where: {
                     employee: { manager: { id: user.id } },
-                    manager_approval: 'Pending',
                 },
                 relations: ['employee', 'leaveType'],
                 order: { raisedDate: 'DESC' },

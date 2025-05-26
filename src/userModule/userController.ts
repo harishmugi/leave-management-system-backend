@@ -188,35 +188,36 @@ const deleted=await UserService.deletedEmployees()
 
 
   
-  // // BULK UPLOAD EMPLOYEES
-  // static async uploadHandler(req: Request, h: ResponseToolkit) {
-  //   try {
-  //     const file = (req.payload as any).file;
+  // BULK UPLOAD EMPLOYEES
+  static async uploadHandler(req: Request, h: ResponseToolkit) {
+    try {
+      const file = (req.payload as any).file;
 
-  //     if (!file || !file._data) {
-  //       return h.response({ error: 'No file uploaded' }).code(400);
-  //     }
+      if (!file || !file._data) {
+        return h.response({ error: 'No file uploaded' }).code(400);
+      }
 
-  //     const employees = await parseExcel(file._data);
-  //     console.log(`📊 Parsed ${employees.length} employees from Excel`);
+      const employees = await parseExcel(file._data);
+      console.log(`📊 Parsed ${employees.length} employees from Excel`);
 
-  //     if (!employees || employees.length === 0) {
-  //       return h.response({ error: 'No valid employees found in file' }).code(400);
-  //     }
+      if (!employees || employees.length === 0) {
+        return h.response({ error: 'No valid employees found in file' }).code(400);
+      }
 
-  //     await employeeQueue.add('bulk-create', employees, {
-  //       attempts: 3,
-  //       backoff: { type: 'exponential', delay: 5000 },
-  //     });
+      await employeeQueue.add('bulk-create', employees, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+      });
 
-  //     return h.response({ message: 'Employees processing started' }).code(202);
-  //   } catch (error) {
-  //     console.error('❌ Upload error:', error);
-  //     return h.response({ error: 'Failed to process file' }).code(500);
-  //   }
-  // }
+      return h.response({ message: 'Employees processing started' }).code(202);
+    } catch (error) {
+      console.error('❌ Upload error:', error);
+      return h.response({ error: 'Failed to process file' }).code(500);
+    }
+  }
 }
 import { ServerRoute } from '@hapi/hapi';
+import { employeeQueue } from '../dist/employeeQueue';
 
 export const userRoute: ServerRoute[] = [
   {
@@ -263,18 +264,18 @@ export const userRoute: ServerRoute[] = [
     path: '/me',
     handler: UserController.getCurrentUser,
   },
-  // {
-  //   method: 'POST',
-  //   path: '/employees/bulk-upload',
-  //   options: {
-  //     payload: {
-  //       output: 'stream',
-  //       parse: true,
-  //       allow: 'multipart/form-data',
-  //       maxBytes: 10 * 1024 * 1024, // 10MB
-  //       multipart: true,
-  //     },
-  //   },
-  //   handler: UserController.uploadHandler,
-  // },
+  {
+    method: 'POST',
+    path: '/employees/bulk-upload',
+    options: {
+      payload: {
+        output: 'stream',
+        parse: true,
+        allow: 'multipart/form-data',
+        maxBytes: 10 * 1024 * 1024, // 10MB
+        multipart: true,
+      },
+    },
+    handler: UserController.uploadHandler,
+  },
 ];

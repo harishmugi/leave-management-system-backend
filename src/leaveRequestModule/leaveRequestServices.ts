@@ -67,7 +67,8 @@ export class LeaveRequestService {
         where: {
           employee_id: leaveRequestData.employee_id,
           leave_type_id: leaveRequestData.leave_type_id,
-        },
+        }
+
       });
 
       if (days > available[0].remaining_leave) {
@@ -252,10 +253,7 @@ if (days <= 2) {
     if ([manager_approval, HR_approval, director_approval].includes(APPROVAL.Rejected)) {
       updated.status = APPROVAL.Rejected;
     } else if (
-      (manager_approval === APPROVAL.Approved || manager_approval === APPROVAL.NoManager) &&
-      HR_approval === APPROVAL.Approved &&
-      director_approval === APPROVAL.Approved
-    ) {
+      (manager_approval === APPROVAL.Approved || manager_approval === APPROVAL.NoManager) &&( HR_approval === APPROVAL.Approved||HR_approval === APPROVAL.NoManager) &&( director_approval === APPROVAL.Approved|| director_approval === APPROVAL.NoManager) ) {
       const days = differenceInCalendarDays(new Date(request.endDate), new Date(request.startDate)) + 1;
 
       const balance = await LeaveBalanceController.patchLeaveBalance(
@@ -279,13 +277,14 @@ if (days <= 2) {
     const repo = dataSource.getRepository(LeaveRequest);
     const result = await repo.delete(id);
     return result.affected !== 0;
-  }static async getLeaveRequestsForRole(userId: string) {
+  }
+  static async getLeaveRequestsForRole(userId: string) {
   const repo = dataSource.getRepository(LeaveRequest);
   const userRepo = dataSource.getRepository(Employee);
 
   // Get the logged-in user
   const user = await userRepo.findOne({
-    where: { id: userId ,soft_delete:false },
+    where: { id: userId },
     relations: ['manager'],
   });
 
@@ -321,7 +320,6 @@ if (days <= 2) {
     leaveRequests = await repo.find({
       where: {
         employee: { manager: { id: user.id } },
-        manager_approval: 'Pending',
       },
       relations: ['employee', 'leaveType'],
       order: { raisedDate: 'DESC' },
