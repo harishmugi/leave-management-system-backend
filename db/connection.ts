@@ -16,7 +16,7 @@ const dataSource = new DataSource({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     entities: [Employee,LeaveRequest,LeaveType,LeaveBalance],
-    synchronize: true,
+    synchronize:  true,
     ssl:isSSL ? {rejectUnauthorized : false} : undefined,
 })
 

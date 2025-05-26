@@ -10,44 +10,28 @@ class UserService {
         const employeeRepository = connection_1.dataSource.getRepository(userEntity_1.Employee);
         try {
             const managerRepo = connection_1.dataSource.getRepository(userEntity_1.Employee);
-            // 1. Resolve manager
+            // Resolve manager
             let manager = null;
             if (employeeData.managerEmail) {
                 manager = await managerRepo.findOneBy({ email: employeeData.managerEmail });
                 if (!manager)
                     throw new Error('Manager with the provided email does not exist.');
             }
-            // 2. Resolve HR
-            let HR = null;
-            if (employeeData.hrEmail) {
-                HR = await managerRepo.findOneBy({ email: employeeData.hrEmail });
-                if (!HR)
-                    throw new Error('HR with the provided email does not exist.');
-            }
-            // 3. Resolve Director
-            let director = null;
-            if (employeeData.directorEmail) {
-                director = await managerRepo.findOneBy({ email: employeeData.directorEmail });
-                if (!director)
-                    throw new Error('Director with the provided email does not exist.');
-            }
-            // 4. Create employee with relationships
+            // Create employee with manager relationship only
             const employee = employeeRepository.create({
                 fullname: employeeData.fullname,
                 email: employeeData.email,
                 password: employeeData.password,
                 role: employeeData.role,
                 manager: manager || null,
-                HR: HR || null,
-                director: director || null,
                 created_at: new Date(employeeData.created_at),
                 updated_at: new Date(employeeData.updated_at),
             });
-            // 5. Save to DB
+            // Save to DB
             await employeeRepository.save(employee);
-            // 6. Initialize leave balances
-            await leaveBalanceServices_1.LeaveBalanceService.initializeLeaveBalancesForEmployee(employee.id);
-            // 7. Generate and return token
+            // Initialize leave balances
+            await leaveBalanceServices_1.LeaveBalanceService.initializeLeaveBalancesForEmployee(employee.id, employee.role);
+            // Generate and return JWT
             return (0, jwt_1.generateJwt)(employee);
         }
         catch (error) {
@@ -59,7 +43,8 @@ class UserService {
         try {
             const employeeRepository = connection_1.dataSource.getRepository(userEntity_1.Employee);
             return await employeeRepository.find({
-                relations: ['manager', 'HR', 'director'],
+                where: { soft_delete: false },
+                relations: ['manager'],
             });
         }
         catch (error) {
@@ -67,12 +52,12 @@ class UserService {
             throw new Error('Failed to get employees!');
         }
     }
-    static async getEmployee(email) {
+    static async getEmployee(id) {
         try {
             const employeeRepository = connection_1.dataSource.getRepository(userEntity_1.Employee);
             return await employeeRepository.findOne({
-                where: { email },
-                relations: ['manager', 'HR', 'director'],
+                where: { id, soft_delete: false },
+                relations: ['manager'],
             });
         }
         catch (error) {
@@ -104,6 +89,24 @@ class UserService {
             console.error('Error deleting employee:', error);
             throw new Error('Failed to delete employee!');
         }
+    }
+    static async softDeleteEmployee(id) {
+        const userRepo = connection_1.dataSource.getRepository(userEntity_1.Employee);
+        const employee = await userRepo.findOne({ where: { id: id } });
+        if (!employee) {
+            throw new Error('Employee not found');
+        }
+        employee.soft_delete = !(employee.soft_delete);
+        await userRepo.save(employee);
+    }
+    static async deletedEmployees() {
+        const userRepo = connection_1.dataSource.getRepository(userEntity_1.Employee);
+        const employees = await userRepo.find({ where: { soft_delete: true } });
+        if (!employees) {
+            throw new Error('Employee not found');
+        }
+        console.log('employee deleted', employees);
+        return employees;
     }
 }
 exports.UserService = UserService;

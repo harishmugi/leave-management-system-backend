@@ -13,10 +13,15 @@ exports.LeaveRequest = void 0;
 const typeorm_1 = require("typeorm");
 const leaveTypeEntity_1 = require("../leaveTypeModule/leaveTypeEntity");
 const userEntity_1 = require("../userModule/userEntity");
+// Approval status options
+const APPROVAL = {
+    Pending: 'Pending',
+    Approved: 'Approved',
+    Rejected: 'Rejected',
+    Cancelled: 'Cancelled',
+    NoManager: 'NotRequired',
+};
 let LeaveRequest = class LeaveRequest {
-    static find(arg0) {
-        throw new Error('Method not implemented.');
-    }
 };
 exports.LeaveRequest = LeaveRequest;
 __decorate([
@@ -68,7 +73,7 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({
         type: 'enum',
-        enum: ['Pending', 'Approved', 'Rejected'],
+        enum: ['Pending', 'Approved', 'Rejected', 'NotRequired'],
         default: 'Pending',
     }),
     __metadata("design:type", String)
@@ -76,7 +81,7 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({
         type: 'enum',
-        enum: ['Pending', 'Approved', 'Rejected'],
+        enum: ['Pending', 'Approved', 'Rejected', 'NotRequired'],
         default: 'Pending',
     }),
     __metadata("design:type", String)
@@ -84,7 +89,7 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({
         type: 'enum',
-        enum: ['Pending', 'Approved', 'Rejected'],
+        enum: ['Pending', 'Approved', 'Rejected', 'NotRequired'],
         default: 'Pending',
     }),
     __metadata("design:type", String)
@@ -97,7 +102,7 @@ __decorate([
     (0, typeorm_1.Column)({
         type: 'enum',
         enum: ['manager', 'hr', 'director'],
-        nullable: true, // You can make it nullable if not every request will have it
+        nullable: true,
     }),
     __metadata("design:type", String)
 ], LeaveRequest.prototype, "approvalLevel", void 0);

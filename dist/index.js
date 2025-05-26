@@ -104,15 +104,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // start();
 const Hapi = __importStar(require("@hapi/hapi"));
 const connection_1 = require("./db/connection");
-const userController_1 = require("./src/userModule/userController");
+// import { uploadRoute, userRoute } from './src/userModule/userController';
 const leaveRequestController_1 = require("./src/leaveRequestModule/leaveRequestController");
 const leaveTypeController_1 = require("./src/leaveTypeModule/leaveTypeController");
 const leaveBalanceController_1 = require("./src/leaveBalanceModule/leaveBalanceController");
 const dotenv_1 = __importDefault(require("dotenv"));
+const userController_1 = require("./src/userModule/userController");
 dotenv_1.default.config();
 const init = async () => {
     const server = Hapi.server({
-        host: '0.0.0.0',
+        host: process.env.NODE_ENV == "production" ? '0.0.0.0' : 'localhost',
         port: parseInt(process.env.PORT || '3000'),
         routes: {
             cors: {
@@ -137,7 +138,8 @@ const init = async () => {
         ...leaveBalanceController_1.LeaveBalanceRoute,
         ...leaveRequestController_1.LeaveRequestRoute,
         ...leaveTypeController_1.LeaveTypeRoute,
-        ...userController_1.userRoute, userController_1.uploadRoute
+        ...userController_1.userRoute,
+        // uploadRoute
     ]);
     await server.start();
     console.log("server runs on ", server.info.uri);

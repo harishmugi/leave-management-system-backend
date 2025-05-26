@@ -43,8 +43,7 @@ class LeaveBalanceController {
     // CREATE LEAVE BALANCE
     static async createLeaveBalance(request, h) {
         console.log("hitted");
-        const authHeader = request.headers['authorization'];
-        const token = authHeader && authHeader.split(' ')[1];
+        const token = request.state.token;
         if (!token) {
             return h.response({ error: 'No token provided' }).code(401);
         }
@@ -55,8 +54,8 @@ class LeaveBalanceController {
         catch (err) {
             return h.response({ error: 'Invalid token' }).code(401);
         }
-        console.log('Decoded Email:', decoded.userData.email);
-        const employee = await userServices_1.UserService.getEmployee(decoded.userData.email);
+        console.log('Decoded ID:', decoded.userData.id);
+        const employee = await userServices_1.UserService.getEmployee(decoded.userData.id); // Use decoded.id
         if (!employee) {
             return h.response({ error: 'Employee not found' }).code(404);
         }
@@ -65,38 +64,47 @@ class LeaveBalanceController {
         console.log("Leave Balance Payload:", leaveBalanceData);
         try {
             const leaveBalance = await leaveBalanceServices_1.LeaveBalanceService.createLeaveBalance(leaveBalanceData);
-            return h.response({ message: 'Leave request created', leaveBalance }).code(201);
+            return h.response({ message: 'Leave balance created', leaveBalance }).code(201);
         }
         catch (error) {
             console.error('Error:', error);
-            return h.response({ error: 'Failed to create leave request' }).code(500);
+            return h.response({ error: 'Failed to create leave balance' }).code(500);
         }
     }
-    //GET LEAVE REQUEST=======================================================================================================================================
+    // GET LEAVE BALANCE
     static async getLeaveBalance(request, h) {
         try {
             const token = request.state.token;
+            console.log('getLeave', token);
             if (!token) {
                 return h.response({ error: 'No token provided' }).code(401);
             }
-            console.log("hitted balance");
+            console.log('secrete', process.env.JWT_SECRET);
             const decoded = Jwt.verify(token, process.env.JWT_SECRET);
-            console.log('Decoded Email:', decoded.userData.id);
+            console.log(decoded.userData.id);
             const userId = decoded.userData.id;
-            const employee = await userServices_1.UserService.getEmployee(decoded.userData.email);
-            console.log("employeeeeee//", employee.id);
-            if (employee) {
-                const leaveBalances = await leaveBalanceServices_1.LeaveBalanceService.getAllLeaveBalance(userId);
-                console.log(leaveBalances);
-                return h.response(leaveBalances).code(200);
+            console.log('ID', userId);
+            const employee = await userServices_1.UserService.getEmployee(userId); // Use userId directly
+            if (!employee) {
+                return h.response({ error: 'Employee not found' }).code(404);
             }
+            // If employee is HR, Director, or Manager, they might have access to all balances
+            let leaveBalances;
+            if (employee.role === 'HR' || employee.role === 'Director') {
+                leaveBalances = await leaveBalanceServices_1.LeaveBalanceService.getAllLeaveBalance(userId); // Retrieve all balances if role is HR or Director
+            }
+            else {
+                leaveBalances = await leaveBalanceServices_1.LeaveBalanceService.getLeaveBalanceByEmployee(userId); // Fetch specific balance for the employee
+            }
+            console.log(leaveBalances);
+            return h.response(leaveBalances).code(200);
         }
         catch (error) {
-            console.error('Error fetching leaveBalances:', error);
-            return h.response({ error: 'Failed to fetch leaveBalances' }).code(500);
+            console.error('Error fetching leave balances:', error);
+            return h.response({ error: 'Failed to fetch leave balances' }).code(500);
         }
     }
-    //UPDATE========================================================================================================================================
+    // UPDATE LEAVE BALANCE
     static async updateLeaveBalance(request, h) {
         const id = request.params.id;
         const updateData = request.payload;
@@ -120,17 +128,16 @@ class LeaveBalanceController {
                 leave_type_id: leaveTypeId,
             },
         });
-        if (!balance) {
+        if (!balance)
             throw new Error('Leave balance record not found');
-        }
-        console.log(daysTaken);
+        if (balance.remaining_leave < daysTaken)
+            throw new Error('Insufficient leave balance');
         balance.remaining_leave -= daysTaken;
-        balance.used_leave = daysTaken;
+        balance.used_leave += daysTaken;
         await balanceRepo.save(balance);
-        console.log(`✅ Leave balance updated: -${daysTaken} days`);
         return balance.remaining_leave;
     }
-    //DELETE========================================================================================================================================
+    // DELETE LEAVE BALANCE
     static async deleteLeaveBalance(request, h) {
         const id = request.params.id;
         try {
@@ -147,7 +154,7 @@ class LeaveBalanceController {
     }
 }
 exports.LeaveBalanceController = LeaveBalanceController;
-//ROUTES==========================================================================================================================================
+// ROUTES
 exports.LeaveBalanceRoute = [
     {
         method: 'POST',
@@ -174,5 +181,4 @@ exports.LeaveBalanceRoute = [
         path: '/leaveBalance/{id}',
         handler: LeaveBalanceController.deleteLeaveBalance,
     }
-    //crud
 ];

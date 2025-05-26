@@ -13,6 +13,10 @@ exports.Employee = void 0;
 const typeorm_1 = require("typeorm");
 const leaveRequestEntity_1 = require("../leaveRequestModule/leaveRequestEntity");
 let Employee = class Employee {
+    // ✅ Virtual field for manager's email
+    get managerEmail() {
+        return this.manager?.email ?? null;
+    }
 };
 exports.Employee = Employee;
 __decorate([
@@ -49,15 +53,9 @@ __decorate([
     __metadata("design:type", Array)
 ], Employee.prototype, "subordinates", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => Employee, { nullable: true }),
-    (0, typeorm_1.JoinColumn)({ name: "hr_id" }),
-    __metadata("design:type", Employee)
-], Employee.prototype, "HR", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => Employee, { nullable: true }),
-    (0, typeorm_1.JoinColumn)({ name: "director_id" }),
-    __metadata("design:type", Employee)
-], Employee.prototype, "director", void 0);
+    (0, typeorm_1.OneToMany)(() => leaveRequestEntity_1.LeaveRequest, leaveRequest => leaveRequest.employee),
+    __metadata("design:type", Array)
+], Employee.prototype, "leaveRequests", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)
@@ -67,9 +65,9 @@ __decorate([
     __metadata("design:type", Date)
 ], Employee.prototype, "updated_at", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => leaveRequestEntity_1.LeaveRequest, leaveRequest => leaveRequest.employee),
-    __metadata("design:type", Array)
-], Employee.prototype, "leaveRequests", void 0);
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], Employee.prototype, "soft_delete", void 0);
 exports.Employee = Employee = __decorate([
     (0, typeorm_1.Entity)()
 ], Employee);
