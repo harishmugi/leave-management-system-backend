@@ -75,7 +75,7 @@ class LeaveBalanceController {
     //GET LEAVE REQUEST=======================================================================================================================================
     static async getLeaveBalance(request, h) {
         try {
-            const token = request.state.auth_token;
+            const token = request.state.token;
             if (!token) {
                 return h.response({ error: 'No token provided' }).code(401);
             }

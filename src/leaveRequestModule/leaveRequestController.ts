@@ -1,6 +1,6 @@
 import { Request, ResponseToolkit } from '@hapi/hapi';
 import * as Jwt from 'jsonwebtoken';
-import Joi = require("joi");
+import * as Joi from 'joi';
 import { LeaveRequestService } from './leaveRequestServices';
 
 interface DecodedToken {
@@ -24,7 +24,8 @@ interface UpdateApprovalPayload {
 
 export class LeaveRequestController {
   private static async getDecodedToken(request: Request): Promise<DecodedToken> {
-    const token = request.state.auth_token;
+    const token = request.state.token;
+    console.log('getting',token)
     if (!token) throw new Error('No token provided');
 
     try {
@@ -35,13 +36,16 @@ export class LeaveRequestController {
     }
   }
 
+  // Create Leave Request (send to all HR, Director, and the employee's manager)
   static async createLeaveRequest(request: Request, h: ResponseToolkit) {
     try {
       const decoded = await LeaveRequestController.getDecodedToken(request);
       const leaveData = request.payload as LeaveRequestPayload;
       leaveData['employee_id'] = decoded.userData.id;
 
+      // Create the leave request and notify HR, Directors, and manager
       const leaveRequest = await LeaveRequestService.createLeaveRequest(leaveData);
+
       return h.response({ message: 'Leave request created', leaveRequest }).code(201);
     } catch (error: any) {
       console.error('Error creating leave request:', error);
@@ -51,25 +55,71 @@ export class LeaveRequestController {
     }
   }
 
+  // Get Leave Requests by Role (HR, Director)
   static async getLeaveRequestsByRole(request: Request, h: ResponseToolkit) {
     try {
+      // Decode the JWT token or use whatever method to get the current user's data
       const decoded = await LeaveRequestController.getDecodedToken(request);
+
+      // Get leave requests based on role
       const leaveRequests = await LeaveRequestService.getLeaveRequestsForRole(decoded.userData.id);
+console.log(leaveRequests)
+      // Return the fetched leave requests
       return h.response(leaveRequests).code(200);
     } catch (error: any) {
+      // Log and handle error based on the type
       console.error('Error fetching leave requests by role:', error);
+
+      // Return a meaningful error message to the client
       return h.response({ error: 'Failed to fetch leave requests' }).code(
         error.message === 'Unauthorized' ? 401 : 500
       );
     }
-  }
+  }static async getLeaveRequestForCalendar(request: Request, h: ResponseToolkit) {
+  const { role } = request.params;  // Access the 'role' path parameter
 
+  try {
+    const decoded = await LeaveRequestController.getDecodedToken(request);
+    const userId = decoded.userData.id;
+
+    let leaveRequests;
+
+    // Fetch leave requests based on the role parameter
+    if (role === 'Manager') {
+      leaveRequests = await LeaveRequestService.getLeaveRequestsForCalendar(userId);
+    } else if (role === 'HR' || role === 'Director') {
+      leaveRequests = await LeaveRequestService.getLeaveRequestAll();
+    }
+
+    return h.response(leaveRequests).code(200);
+  } catch (error: any) {
+    console.error('Error fetching leave requests:', error);
+    return h.response({ error: 'Failed to fetch leave requests' }).code(error.message === 'Unauthorized' ? 401 : 500);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // Get Leave Request by Employee
   static async getLeaveRequestByEmployee(request: Request, h: ResponseToolkit) {
     try {
       const decoded = await LeaveRequestController.getDecodedToken(request);
       const leaveRequests = await LeaveRequestService.getLeaveRequest(decoded.userData.id);
-      console.log('leaveRequests',leaveRequests)
-      console.log('decoded',decoded)
+console.log('leaverequest',leaveRequests)
       return h.response(leaveRequests).code(200);
     } catch (error: any) {
       console.error('Error fetching employee leave requests:', error);
@@ -79,9 +129,9 @@ export class LeaveRequestController {
     }
   }
 
+  // Update Leave Request Approval
   static async updateLeaveRequest(request: Request, h: ResponseToolkit) {
     try {
-      
       const decoded = await LeaveRequestController.getDecodedToken(request);
       const leaveId = request.params.id;
       const { id, approved } = request.payload as UpdateApprovalPayload;
@@ -106,7 +156,7 @@ export class LeaveRequestController {
       }
 
       const updatedLeave = await LeaveRequestService.updateLeaveRequest(leaveId, updateData);
-      
+
       if (!updatedLeave) {
         return h.response({ error: 'Leave request not found or unable to update' }).code(404);
       }
@@ -120,6 +170,7 @@ export class LeaveRequestController {
     }
   }
 
+  // Delete Leave Request
   static async deleteLeaveRequest(request: Request, h: ResponseToolkit) {
     try {
       const id = request.params.id;
@@ -137,7 +188,6 @@ export class LeaveRequestController {
   }
 }
 import { ServerRoute } from '@hapi/hapi';
-
 
 export const LeaveRequestRoute: ServerRoute[] = [
   {
@@ -168,6 +218,11 @@ export const LeaveRequestRoute: ServerRoute[] = [
     method: 'GET',
     path: '/leaveRequests',
     handler: LeaveRequestController.getLeaveRequestByEmployee,
+  },
+  {
+    method: 'GET',
+    path: '/leaveRequests/calendar/{role}',
+    handler: LeaveRequestController.getLeaveRequestForCalendar,
   },
   {
     method: 'PATCH',

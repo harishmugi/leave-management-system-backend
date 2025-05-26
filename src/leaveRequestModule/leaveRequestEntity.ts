@@ -5,16 +5,23 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
-  OneToMany,
 } from "typeorm";
 import { LeaveType } from "../leaveTypeModule/leaveTypeEntity";
 import { Employee } from "../userModule/userEntity";
 
+// Approval status options
+const APPROVAL = {
+  Pending: 'Pending',
+  Approved: 'Approved',
+  Rejected: 'Rejected',
+  Cancelled: 'Cancelled',
+  NoManager: 'NotRequired',
+} as const;
+
+export type ApprovalStatus = typeof APPROVAL[keyof typeof APPROVAL];
+
 @Entity()
 export class LeaveRequest {
-  static find(arg0: { status: string; manager_approval: string; }) {
-    throw new Error('Method not implemented.');
-  }
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
@@ -54,24 +61,24 @@ export class LeaveRequest {
 
   @Column({
     type: 'enum',
-    enum: ['Pending', 'Approved', 'Rejected'],
+    enum: ['Pending', 'Approved', 'Rejected', 'NotRequired'],
     default: 'Pending',
   })
-  manager_approval: 'Pending' | 'Approved' | 'Rejected';
+  manager_approval: ApprovalStatus;
 
   @Column({
     type: 'enum',
-    enum: ['Pending', 'Approved', 'Rejected'],
+    enum: ['Pending', 'Approved', 'Rejected', 'NotRequired'],
     default: 'Pending',
   })
-  HR_approval: 'Pending' | 'Approved' | 'Rejected';
+  HR_approval: ApprovalStatus;
 
   @Column({
     type: 'enum',
-    enum: ['Pending', 'Approved', 'Rejected'],
+    enum: ['Pending', 'Approved', 'Rejected', 'NotRequired'],
     default: 'Pending',
   })
-  director_approval: 'Pending' | 'Approved' | 'Rejected';
+  director_approval: ApprovalStatus;
 
   @CreateDateColumn()
   raisedDate: Date;
@@ -79,7 +86,7 @@ export class LeaveRequest {
   @Column({
     type: 'enum',
     enum: ['manager', 'hr', 'director'],
-    nullable: true, // You can make it nullable if not every request will have it
+    nullable: true,
   })
   approvalLevel: 'manager' | 'hr' | 'director' | null;
 }

@@ -1,17 +1,22 @@
-import { In, LessThanOrEqual, MoreThanOrEqual, Not } from 'typeorm';
 import { dataSource } from '../../db/connection';
-import { LeaveType } from '../leaveTypeModule/leaveTypeEntity';
-import { Employee } from '../userModule/userEntity';
 import { LeaveRequest } from './leaveRequestEntity';
+import { Employee } from '../userModule/userEntity';
+import { LeaveType } from '../leaveTypeModule/leaveTypeEntity';
 import { differenceInCalendarDays } from 'date-fns';
-import { isValidDate } from './leaveRequestValidation';
 import { LeaveBalanceController } from '../leaveBalanceModule/leaveBalanceController';
+import { In, LessThanOrEqual, MoreThanOrEqual, Not } from 'typeorm';
+import { isValidDate } from './leaveRequestValidation';
+import { LeaveBalance } from '../leaveBalanceModule/leaveBalanceEntity';
+import { error } from 'console';
 
+// Define the possible leave request statuses
 const APPROVAL = {
   Pending: 'Pending' as const,
   Approved: 'Approved' as const,
   Rejected: 'Rejected' as const,
   Cancelled: 'Cancelled' as const,
+  NoManager: 'NotRequired' as const,
+
 };
 
 export class LeaveRequestService {
@@ -26,9 +31,9 @@ export class LeaveRequestService {
     }
 
     try {
-      // Find leave type
       const leaveType = await leaveTypeRepository.findOne({
-        where: { id: leaveRequestData.leave_type_id },
+        where: { id: leaveRequestData.leave_type_id
+         },
       });
       if (!leaveType) throw new Error('Invalid leave type');
 
@@ -42,159 +47,195 @@ export class LeaveRequestService {
       // Check for overlapping leave requests
       const overlap = await leaveRequestRepository.findOne({
         where: {
-          employee: { id: leaveRequestData.employee_id },
+          employee: { id: leaveRequestData.employee_id,soft_delete:false },
           startDate: LessThanOrEqual(endDate),
           endDate: MoreThanOrEqual(startDate),
-          status: Not(In([APPROVAL.Rejected, APPROVAL.Cancelled])) 
+          status: Not(In([APPROVAL.Rejected, APPROVAL.Cancelled])),
         },
       });
 
       if (overlap) throw new Error('Leave request overlaps with an existing one');
 
       const days = differenceInCalendarDays(endDate, startDate) + 1;
+      const employee = await userRepository.findOne({
+        where: { id: leaveRequestData.employee_id,soft_delete:false },
+        relations: ['manager'],
+      });
 
-      // Default status for new requests
+      const leaveBalanceRepo = dataSource.getRepository(LeaveBalance);
+      const available = await leaveBalanceRepo.find({
+        where: {
+          employee_id: leaveRequestData.employee_id,
+          leave_type_id: leaveRequestData.leave_type_id,
+        },
+      });
+
+      if (days > available[0].remaining_leave) {
+        throw new Error(`You can only take ${available[0].remaining_leave} day(s) of leave.`);
+      }
+
+      const manager = employee.manager;
+      const managerRole = manager?.role;
+
+      // Default to not required
+      leaveRequestData.manager_approval = APPROVAL.NoManager;
+      leaveRequestData.HR_approval = APPROVAL.NoManager;
+      leaveRequestData.director_approval = APPROVAL.NoManager;
+
+      // Determine approval based on number of leave days
+if (days <= 2) {
+  if (manager) {
+    if (managerRole === 'HR') {
+      leaveRequestData.manager_approval = APPROVAL.NoManager;
+      leaveRequestData.HR_approval = APPROVAL.Pending;
+    } else {
+      leaveRequestData.manager_approval = APPROVAL.Pending;
+    }
+  } else {
+    leaveRequestData.manager_approval = APPROVAL.NoManager;
+  }
+} else if (days > 2 && days < 5) {
+  if (manager) {
+    if (managerRole === 'HR') {
+      leaveRequestData.manager_approval = APPROVAL.NoManager;
+      leaveRequestData.HR_approval = APPROVAL.Pending;
+    } else {
       leaveRequestData.manager_approval = APPROVAL.Pending;
       leaveRequestData.HR_approval = APPROVAL.Pending;
-      leaveRequestData.director_approval = APPROVAL.Pending;
+    }
+  } else {
+    leaveRequestData.manager_approval = APPROVAL.NoManager;
+    leaveRequestData.HR_approval = APPROVAL.Pending;
+  }
+} else if (days >= 5) {
+  if (managerRole === 'Director') {
+    leaveRequestData.manager_approval = APPROVAL.NoManager;
+    leaveRequestData.HR_approval = APPROVAL.Pending;
+    leaveRequestData.director_approval = APPROVAL.Pending;
+  } else if (managerRole === 'HR') {
+    leaveRequestData.manager_approval = APPROVAL.NoManager;
+    leaveRequestData.HR_approval = APPROVAL.Pending;
+    leaveRequestData.director_approval = APPROVAL.Pending;
+  } else {
+    leaveRequestData.manager_approval = APPROVAL.Pending;
+    leaveRequestData.HR_approval = APPROVAL.Pending;
+    leaveRequestData.director_approval = APPROVAL.Pending;
+  }
+}
+
       leaveRequestData.status = APPROVAL.Pending;
       leaveRequestData.raisedDate = new Date();
 
-      // Handle specific leave types
+      // Handle specific leave types like Sick Leave
       if (leaveType.leave_type === 'Sick Leave') {
         const balance = await LeaveBalanceController.patchLeaveBalance(
           leaveRequestData.employee_id,
           leaveType.id,
           days
         );
-        if (balance < days) throw new Error('Insufficient leave balance');
 
-        // Automatically approve sick leave if balance is sufficient
         leaveRequestData.manager_approval = APPROVAL.Approved;
         leaveRequestData.HR_approval = APPROVAL.Approved;
         leaveRequestData.director_approval = APPROVAL.Approved;
         leaveRequestData.status = APPROVAL.Approved;
       }
 
-      // Create and save the leave request
       const leaveRequest = leaveRequestRepository.create(leaveRequestData);
       await leaveRequestRepository.save(leaveRequest);
 
-      // Notify approvers if it's not a sick leave
-      if (leaveType.leave_type !== 'Sick Leave') {
-        const employee = await userRepository.findOne({ where: { id: leaveRequestData.employee_id } });
-        if (employee) await this.notifyApprovers(employee, days);
+      if (employee) {
+        await this.notifyApprovers(employee, days);
       }
 
       return leaveRequest;
+
     } catch (error: any) {
       throw new Error('Failed to create leave request: ' + error.message);
     }
   }
 
-  // Notify the relevant approvers based on the leave duration
-  static async notifyApprovers(employee: Employee, days: number) {
-    const roles = ['manager'];
-    if (days > 1) roles.push('HR');
-    if (days > 5) roles.push('director');
-    console.log(`Notify ${roles.join(', ')} for ${employee.fullname}`);
-  }
 
-  // Get all leave requests that are pending for a list of employees
-  static async getAllLeaveRequest(employeeIds: string[]) {
-    const repo = dataSource.getRepository(LeaveRequest);
-    return repo.find({
-      where: { employee: { id: In(employeeIds) }, status: APPROVAL.Pending },
-      relations: ['employee', 'leaveType'],
-      order: { raisedDate: 'DESC' },
-    });
+  // Notify the relevant approvers (Manager, HR, Directors)
+  static async notifyApprovers(employee: Employee, days: number) {
+    const approvers: Employee[] = [];
+
+    try {
+      // Get the manager of the employee (if any)
+      if (employee.manager) {
+        const manager = await dataSource.getRepository(Employee).findOne({
+          where: { id: employee.manager.id,soft_delete:false },
+        });
+        if (manager) approvers.push(manager);
+      }
+
+      // Get all HR users
+      const hrUsers = await dataSource.getRepository(Employee).find({
+        where: { role: 'HR' },
+      });
+
+      // Get all Directors
+      const directors = await dataSource.getRepository(Employee).find({
+        where: { role: 'Director' },
+      });
+
+      // Add all HR and Director users to the approvers list
+      approvers.push(...hrUsers, ...directors);
+
+      // Logging approvers (or you can implement email/push notification here)
+      console.log(`Notify the following approvers for ${employee.fullname}:`);
+      approvers.forEach((approver) => {
+        console.log(`- ${approver.fullname} (${approver.role})`);
+      });
+
+      // Here you can implement notifications (email, push, etc.)
+    } catch (error: any) {
+      console.error('Error notifying approvers:', error.message);
+    }
   }
 
   // Get all leave requests for a specific employee
   static async getLeaveRequest(employeeId: string) {
     const repo = dataSource.getRepository(LeaveRequest);
     return repo.find({
-      where: { employee: { id: employeeId } },
+      where: { employee: { id: employeeId,soft_delete:false } },
       relations: ['employee', 'leaveType'],
       order: { raisedDate: 'DESC' },
     });
   }
+  static async getLeaveRequestAll() {
+    const repo = dataSource.getRepository(LeaveRequest);
 
-  // Get leave requests that need approval for a specific role
-  static async getLeaveRequestsForRole(roleId: string) {
-    const employeeRepo = dataSource.getRepository(Employee);
-    const leaveRepo = dataSource.getRepository(LeaveRequest);
-
-    const currentUser = await employeeRepo.findOne({ where: { id: roleId } });
-
-    if (!currentUser) throw new Error('Approver not found');
-    const role = currentUser.role;
-
-    if (role === 'Manager') {
-      // Manager views leave requests from their direct reports
-      const reports = await employeeRepo.find({
-        where: { manager: { id: currentUser.id } },
-      });
-      const reportIds = reports.map((emp) => emp.id);
-
-      return leaveRepo.find({
-        where: {
-          employee: { id: In(reportIds) },
-          manager_approval: APPROVAL.Pending,
-        },
-        relations: ['employee', 'leaveType'],
-        order: { raisedDate: 'DESC' },
-      });
-    } else if (role === 'HR') {
-      // HR views leave requests approved by Manager and pending HR approval
-      return leaveRepo.find({
-        where: {
-          manager_approval: APPROVAL.Approved,
-          HR_approval: APPROVAL.Pending,
-        },
-        relations: ['employee', 'leaveType'],
-        order: { raisedDate: 'DESC' },
-      });
-    } else if (role === 'Director') {
-      // Director views leave requests approved by Manager and HR, pending Director approval
-      const directReports = await employeeRepo.find({
-        where: { director: { id: currentUser.id } },
-      });
-
-      const managerIds = directReports
-        .filter((e) => e.role === 'Manager')
-        .map((m) => m.id);
-
-      const employeeReports = await employeeRepo.find({
-        where: { manager: { id: In(managerIds) } },
-      });
-
-      const allRelevantIds = [
-        ...directReports.map((e) => e.id),
-        ...employeeReports.map((e) => e.id),
-      ];
-
-      return leaveRepo.find({
-        where: {
-          employee: { id: In(allRelevantIds) },
-          manager_approval: APPROVAL.Approved,
-          HR_approval: APPROVAL.Approved,
-          director_approval: APPROVAL.Pending,
-        },
-        relations: ['employee', 'leaveType'],
-        order: { raisedDate: 'DESC' },
-      });
-    } else if (role === 'Employee') {
-      // Employee views their own leave requests
-      return leaveRepo.find({
-        where: { employee: { id: currentUser.id } },
-        relations: ['employee', 'leaveType'],
-        order: { raisedDate: 'DESC' },
-      });
-    }
-
-    throw new Error('Invalid role');
+    // Fetch all leave requests, regardless of employee or manager
+    return repo.find({where:{
+      employee:{
+        soft_delete:false
+      }
+    },
+      relations: ['employee', 'leaveType'], // Include relations with employee and leaveType
+      order: { raisedDate: 'DESC' }, // Order by raisedDate in descending order
+    });
   }
+
+  static async getLeaveRequestsForCalendar(managerId: string) {
+    const requestRepo = dataSource.getRepository(LeaveRequest);
+    const leaveRequests = await requestRepo.find({
+      where: {
+        employee: {
+          manager: {
+            id: managerId,
+          }, soft_delete:false 
+        },
+      },
+      relations: ['employee', 'leaveType'],
+      order: {
+        raisedDate: 'DESC',
+      },
+    });
+
+    return leaveRequests;
+  }
+
+
 
   // Update a leave request status and handle leave approval
   static async updateLeaveRequest(id: string, updateData: Partial<LeaveRequest>) {
@@ -211,7 +252,7 @@ export class LeaveRequestService {
     if ([manager_approval, HR_approval, director_approval].includes(APPROVAL.Rejected)) {
       updated.status = APPROVAL.Rejected;
     } else if (
-      manager_approval === APPROVAL.Approved &&
+      (manager_approval === APPROVAL.Approved || manager_approval === APPROVAL.NoManager) &&
       HR_approval === APPROVAL.Approved &&
       director_approval === APPROVAL.Approved
     ) {
@@ -238,5 +279,66 @@ export class LeaveRequestService {
     const repo = dataSource.getRepository(LeaveRequest);
     const result = await repo.delete(id);
     return result.affected !== 0;
+  }static async getLeaveRequestsForRole(userId: string) {
+  const repo = dataSource.getRepository(LeaveRequest);
+  const userRepo = dataSource.getRepository(Employee);
+
+  // Get the logged-in user
+  const user = await userRepo.findOne({
+    where: { id: userId ,soft_delete:false },
+    relations: ['manager'],
+  });
+
+  if (!user) throw new Error('User not found');
+
+  let leaveRequests: LeaveRequest[] = [];
+
+  if (user.role === 'HR') {
+    // Fetch all leave requests where HR approval is pending
+    const allHrRequests = await repo.find({
+      where: { HR_approval: 'Pending',employee:{
+        soft_delete:false
+      } },
+      relations: ['employee', 'employee.manager', 'leaveType'],
+      order: { raisedDate: 'DESC' },
+    });
+
+    // Show requests where:
+    // 1. HR approval is required AND
+    // 2. HR is assigned as the manager OR user is HR by role
+    leaveRequests = allHrRequests.filter(req =>
+      req.employee.manager?.id === user.id || user.role === 'HR'
+    );
+  } else if (user.role === 'Director') {
+    // Show director approvals
+    leaveRequests = await repo.find({
+      where: { director_approval: 'Pending' },
+      relations: ['employee', 'employee.manager', 'leaveType'],
+      order: { raisedDate: 'DESC' },
+    });
+  } else if (user.role === 'Manager') {
+    // Show requests from managed employees
+    leaveRequests = await repo.find({
+      where: {
+        employee: { manager: { id: user.id } },
+        manager_approval: 'Pending',
+      },
+      relations: ['employee', 'leaveType'],
+      order: { raisedDate: 'DESC' },
+    });
+  } else {
+    // Regular employee: only their own leave requests
+    leaveRequests = await repo.find({
+      where: { employee: { id: userId } },
+      relations: ['employee', 'leaveType'],
+      order: { raisedDate: 'DESC' },
+    });
   }
+
+  return leaveRequests;
+}
+
+
+
+
 }

@@ -74,7 +74,7 @@ class UserController {
                 ttl: 60 * 60 * 1000, // 1 hour
                 isSameSite: 'None',
             })
-                .state('auth_token', token.token, {
+                .state('token', token.token, {
                 isHttpOnly: false,
                 isSecure: process.env.NODE_ENV === 'production',
                 path: '/',

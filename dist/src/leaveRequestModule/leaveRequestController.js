@@ -39,7 +39,7 @@ const Joi = require("joi");
 const leaveRequestServices_1 = require("./leaveRequestServices");
 class LeaveRequestController {
     static async getDecodedToken(request) {
-        const token = request.state.auth_token;
+        const token = request.state.token;
         if (!token)
             throw new Error('No token provided');
         try {

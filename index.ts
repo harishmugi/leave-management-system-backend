@@ -78,19 +78,20 @@
 import * as Hapi from '@hapi/hapi'
 import { Server } from '@hapi/hapi'
 import { dataSource } from './db/connection'
-import { uploadRoute, userRoute } from './src/userModule/userController';
+// import { uploadRoute, userRoute } from './src/userModule/userController';
 import { LeaveRequestRoute } from './src/leaveRequestModule/leaveRequestController';
 import { LeaveTypeRoute } from './src/leaveTypeModule/leaveTypeController';
 import { LeaveBalanceRoute } from './src/leaveBalanceModule/leaveBalanceController';
 import dotenv from 'dotenv';
 import { Employee } from './src/userModule/userEntity';
+import { userRoute } from './src/userModule/userController';
 
 
 dotenv.config()
 
 const init = async () => {
   const server: Server = Hapi.server({
-    host: '0.0.0.0',
+    host: process.env.NODE_ENV=="production" ? '0.0.0.0' : 'localhost',
     port: parseInt(process.env.PORT || '3000'),
     routes: {
       cors: {
@@ -117,7 +118,8 @@ const init = async () => {
     ...LeaveBalanceRoute,
     ...LeaveRequestRoute,
     ...LeaveTypeRoute,
-    ...userRoute,uploadRoute
+    ...userRoute,
+    // uploadRoute
   ])
 
   await server.start();

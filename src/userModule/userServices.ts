@@ -8,11 +8,7 @@ export interface EmployeeData {
   fullname: string;
   password: string;
   role: 'Employee' | 'Manager' | 'HR' | 'Director';
-
   managerEmail?: string;
-  hrEmail?: string;
-  directorEmail?: string;
-
   created_at: string;
   updated_at: string;
 }
@@ -24,51 +20,34 @@ export class UserService {
     try {
       const managerRepo = dataSource.getRepository(Employee);
 
-      // 1. Resolve manager
+      // Resolve manager
       let manager: Employee | null = null;
       if (employeeData.managerEmail) {
         manager = await managerRepo.findOneBy({ email: employeeData.managerEmail });
         if (!manager) throw new Error('Manager with the provided email does not exist.');
       }
 
-      // 2. Resolve HR
-      let HR: Employee | null = null;
-      if (employeeData.hrEmail) {
-        HR = await managerRepo.findOneBy({ email: employeeData.hrEmail });
-        if (!HR) throw new Error('HR with the provided email does not exist.');
-      }
-
-      // 3. Resolve Director
-      let director: Employee | null = null;
-      if (employeeData.directorEmail) {
-        director = await managerRepo.findOneBy({ email: employeeData.directorEmail });
-        if (!director) throw new Error('Director with the provided email does not exist.');
-      }
-
-      // 4. Create employee with relationships
+      // Create employee with manager relationship only
       const employee = employeeRepository.create({
         fullname: employeeData.fullname,
         email: employeeData.email,
         password: employeeData.password,
         role: employeeData.role,
         manager: manager || null,
-        HR: HR || null,
-        director: director || null,
         created_at: new Date(employeeData.created_at),
         updated_at: new Date(employeeData.updated_at),
       });
 
-      // 5. Save to DB
+      // Save to DB
       await employeeRepository.save(employee);
 
-      // 6. Initialize leave balances
-      
-      await LeaveBalanceService.initializeLeaveBalancesForEmployee(employee.id);
+      // Initialize leave balances
+      await LeaveBalanceService.initializeLeaveBalancesForEmployee(employee.id,employee.role);
 
-      // 7. Generate and return token
+      // Generate and return JWT
       return generateJwt(employee);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating employee:', error);
       throw new Error(error.message || 'Failed to create employee!');
     }
@@ -78,7 +57,8 @@ export class UserService {
     try {
       const employeeRepository = dataSource.getRepository(Employee);
       return await employeeRepository.find({
-        relations: ['manager', 'HR', 'director'],
+        where:{soft_delete:false},
+        relations: ['manager'],
       });
     } catch (error) {
       console.error('Error getting employees:', error);
@@ -86,12 +66,12 @@ export class UserService {
     }
   }
 
-  static async getEmployee(email: string): Promise<Employee | null> {
+  static async getEmployee(id: string): Promise<Employee | null> {
     try {
       const employeeRepository = dataSource.getRepository(Employee);
       return await employeeRepository.findOne({
-        where: { email },
-        relations: ['manager', 'HR', 'director'],
+        where: { id,soft_delete:false },
+        relations: ['manager'],
       });
     } catch (error) {
       console.error('Error getting employee:', error);
@@ -123,4 +103,33 @@ export class UserService {
       throw new Error('Failed to delete employee!');
     }
   }
+
+
+static async softDeleteEmployee(id:string){
+
+
+    const userRepo = dataSource.getRepository(Employee);
+    const employee = await userRepo.findOne({ where: { id: id } });
+
+    if (!employee) {
+       throw new Error('Employee not found' );
+    }
+
+    employee.soft_delete =  !(employee.soft_delete);
+    await userRepo.save(employee);
+
+}
+static async deletedEmployees(){
+
+
+    const userRepo = dataSource.getRepository(Employee);
+    const employees = await userRepo.find({ where: { soft_delete:true } });
+
+    if (!employees) {
+       throw new Error('Employee not found' );
+    }
+console.log('employee deleted',employees)
+return employees
+}
+
 }
