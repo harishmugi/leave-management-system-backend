@@ -79,7 +79,6 @@ class LeaveBalanceService {
         const leaveBalanceRepository = connection_1.dataSource.getRepository(leaveBalanceEntity_1.LeaveBalance);
         const leaveBalance = await leaveBalanceRepository.findOne({ where: { id } });
         if (!leaveBalance) {
-            console.log(`Leave balance with id ${id} not found`);
             return null;
         }
         try {
@@ -106,7 +105,6 @@ class LeaveBalanceService {
     static async initializeLeaveBalancesForEmployee(employeeId, role) {
         const leaveTypeRepo = connection_1.dataSource.getRepository(leaveTypeEntity_1.LeaveType);
         const leaveBalanceRepo = connection_1.dataSource.getRepository(leaveBalanceEntity_1.LeaveBalance);
-        console.log(`Initializing leave balances for employee ${employeeId} with role ${role}...`);
         try {
             const leaveTypes = await leaveTypeRepo.find();
             const leaveBalances = leaveTypes.map(type => {
@@ -121,7 +119,6 @@ class LeaveBalanceService {
                 return balance;
             });
             await leaveBalanceRepo.save(leaveBalances);
-            console.log(`Leave balances initialized for employee ${employeeId}`);
         }
         catch (error) {
             console.error('Error initializing leave balances:', error);

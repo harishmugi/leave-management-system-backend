@@ -4,7 +4,6 @@ import { EmployeeData } from './userServices';
 import { UserValidator } from './userValidator';
 import * as Jwt from 'jsonwebtoken';
 import { login } from '../middleWare/authMiddleware';
-import { parseExcel } from '../utils/exelParser';
 // import { employeeQueue } from '../queue/employeeQueue';
 import { Employee } from './userEntity';
 
@@ -85,7 +84,6 @@ export class UserController {
   static async getEmployee(req: Request, h: ResponseToolkit) {
     try {
       const token = req.state.token;
-      console.log(token)
       if (!token) {
         return h.response({ error: 'No token provided' }).code(401);
       }
@@ -188,36 +186,45 @@ const deleted=await UserService.deletedEmployees()
 
 
   
-  // BULK UPLOAD EMPLOYEES
-  static async uploadHandler(req: Request, h: ResponseToolkit) {
+
+  static async uploadHandler(request: Request, h: ResponseToolkit) {
     try {
-      const file = (req.payload as any).file;
-
-      if (!file || !file._data) {
-        return h.response({ error: 'No file uploaded' }).code(400);
+      const data = request.payload as any;
+      if (!data || !data.file) {
+        return h.response({ error: 'No file provided' }).code(400);
       }
 
-      const employees = await parseExcel(file._data);
-      console.log(`📊 Parsed ${employees.length} employees from Excel`);
+      const file = data.file; // This is a stream
 
-      if (!employees || employees.length === 0) {
-        return h.response({ error: 'No valid employees found in file' }).code(400);
-      }
+      const buffer = await UserController.streamToBuffer(file);
 
-      await employeeQueue.add('bulk-create', employees, {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 5000 },
-      });
+      const employees = await parseExcel(buffer);
 
-      return h.response({ message: 'Employees processing started' }).code(202);
-    } catch (error) {
-      console.error('❌ Upload error:', error);
-      return h.response({ error: 'Failed to process file' }).code(500);
+      if (employees.length === 0) {
+        return h.response({ message: 'No valid employee data found in the file' }).code(400);
+      }      await pushEmployeesToQueue(employees);
+
+      return h.response({ message: `Successfully queued ${employees.length} employees for creation.` }).code(200);
+    } catch (error: any) {
+      console.error('Bulk upload error:', error);
+      return h.response({ error: error.message || 'Failed to process upload' }).code(500);
     }
   }
+
+
+// Helper: stream to buffer
+static async streamToBuffer(stream: Readable): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    stream.on('data', (chunk) => chunks.push(chunk));
+    stream.on('end', () => resolve(Buffer.concat(chunks)));
+    stream.on('error', reject);
+  });
+}
 }
 import { ServerRoute } from '@hapi/hapi';
-import { employeeQueue } from '../dist/employeeQueue';
+import { Readable } from 'typeorm/platform/PlatformTools';
+import { parseExcel, pushEmployeesToQueue } from '../utils/excelWorker';
 
 export const userRoute: ServerRoute[] = [
   {

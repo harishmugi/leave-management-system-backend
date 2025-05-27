@@ -42,7 +42,6 @@ const connection_1 = require("../../db/connection");
 class LeaveBalanceController {
     // CREATE LEAVE BALANCE
     static async createLeaveBalance(request, h) {
-        console.log("hitted");
         const token = request.state.token;
         if (!token) {
             return h.response({ error: 'No token provided' }).code(401);
@@ -54,14 +53,12 @@ class LeaveBalanceController {
         catch (err) {
             return h.response({ error: 'Invalid token' }).code(401);
         }
-        console.log('Decoded ID:', decoded.userData.id);
         const employee = await userServices_1.UserService.getEmployee(decoded.userData.id); // Use decoded.id
         if (!employee) {
             return h.response({ error: 'Employee not found' }).code(404);
         }
         const leaveBalanceData = request.payload;
         leaveBalanceData.employee_id = employee.id; // ✅ Set employee ID
-        console.log("Leave Balance Payload:", leaveBalanceData);
         try {
             const leaveBalance = await leaveBalanceServices_1.LeaveBalanceService.createLeaveBalance(leaveBalanceData);
             return h.response({ message: 'Leave balance created', leaveBalance }).code(201);
@@ -75,15 +72,11 @@ class LeaveBalanceController {
     static async getLeaveBalance(request, h) {
         try {
             const token = request.state.token;
-            console.log('getLeave', token);
             if (!token) {
                 return h.response({ error: 'No token provided' }).code(401);
             }
-            console.log('secrete', process.env.JWT_SECRET);
             const decoded = Jwt.verify(token, process.env.JWT_SECRET);
-            console.log(decoded.userData.id);
             const userId = decoded.userData.id;
-            console.log('ID', userId);
             const employee = await userServices_1.UserService.getEmployee(userId); // Use userId directly
             if (!employee) {
                 return h.response({ error: 'Employee not found' }).code(404);
@@ -96,7 +89,6 @@ class LeaveBalanceController {
             else {
                 leaveBalances = await leaveBalanceServices_1.LeaveBalanceService.getLeaveBalanceByEmployee(userId); // Fetch specific balance for the employee
             }
-            console.log(leaveBalances);
             return h.response(leaveBalances).code(200);
         }
         catch (error) {

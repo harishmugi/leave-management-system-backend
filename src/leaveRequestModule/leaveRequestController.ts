@@ -25,7 +25,6 @@ interface UpdateApprovalPayload {
 export class LeaveRequestController {
   private static async getDecodedToken(request: Request): Promise<DecodedToken> {
     const token = request.state.token;
-    console.log('getting',token)
     if (!token) throw new Error('No token provided');
 
     try {
@@ -63,7 +62,6 @@ export class LeaveRequestController {
 
       // Get leave requests based on role
       const leaveRequests = await LeaveRequestService.getLeaveRequestsForRole(decoded.userData.id);
-console.log(leaveRequests)
       // Return the fetched leave requests
       return h.response(leaveRequests).code(200);
     } catch (error: any) {
@@ -119,7 +117,6 @@ console.log(leaveRequests)
     try {
       const decoded = await LeaveRequestController.getDecodedToken(request);
       const leaveRequests = await LeaveRequestService.getLeaveRequest(decoded.userData.id);
-console.log('leaverequest',leaveRequests)
       return h.response(leaveRequests).code(200);
     } catch (error: any) {
       console.error('Error fetching employee leave requests:', error);

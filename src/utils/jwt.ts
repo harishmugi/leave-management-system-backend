@@ -12,7 +12,6 @@ export async function  generateJwt(userData:Employee){
         { expiresIn: '1h' }
     );
 
-    console.log(token+"==============================")
     return token;
 }
 

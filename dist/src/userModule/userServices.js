@@ -105,7 +105,6 @@ class UserService {
         if (!employees) {
             throw new Error('Employee not found');
         }
-        console.log('employee deleted', employees);
         return employees;
     }
 }

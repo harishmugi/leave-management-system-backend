@@ -38,7 +38,6 @@ const userServices_1 = require("./userServices");
 const userValidator_1 = require("./userValidator");
 const Jwt = __importStar(require("jsonwebtoken"));
 const authMiddleware_1 = require("../middleWare/authMiddleware");
-const exelParser_1 = require("../utils/exelParser");
 class UserController {
     // CREATE EMPLOYEE
     static async createEmployee(request, h) {
@@ -103,7 +102,6 @@ class UserController {
     static async getEmployee(req, h) {
         try {
             const token = req.state.token;
-            console.log(token);
             if (!token) {
                 return h.response({ error: 'No token provided' }).code(401);
             }
@@ -189,32 +187,38 @@ class UserController {
             return h.response({ error: 'Internal server error' }).code(500);
         }
     }
-    // BULK UPLOAD EMPLOYEES
-    static async uploadHandler(req, h) {
+    static async uploadHandler(request, h) {
         try {
-            const file = req.payload.file;
-            if (!file || !file._data) {
-                return h.response({ error: 'No file uploaded' }).code(400);
+            const data = request.payload;
+            if (!data || !data.file) {
+                return h.response({ error: 'No file provided' }).code(400);
             }
-            const employees = await (0, exelParser_1.parseExcel)(file._data);
-            console.log(`📊 Parsed ${employees.length} employees from Excel`);
-            if (!employees || employees.length === 0) {
-                return h.response({ error: 'No valid employees found in file' }).code(400);
+            const file = data.file; // This is a stream
+            const buffer = await UserController.streamToBuffer(file);
+            const employees = await (0, excelWorker_1.parseExcel)(buffer);
+            if (employees.length === 0) {
+                return h.response({ message: 'No valid employee data found in the file' }).code(400);
             }
-            await employeeQueue_1.employeeQueue.add('bulk-create', employees, {
-                attempts: 3,
-                backoff: { type: 'exponential', delay: 5000 },
-            });
-            return h.response({ message: 'Employees processing started' }).code(202);
+            await (0, excelWorker_1.pushEmployeesToQueue)(employees);
+            return h.response({ message: `Successfully queued ${employees.length} employees for creation.` }).code(200);
         }
         catch (error) {
-            console.error('❌ Upload error:', error);
-            return h.response({ error: 'Failed to process file' }).code(500);
+            console.error('Bulk upload error:', error);
+            return h.response({ error: error.message || 'Failed to process upload' }).code(500);
         }
+    }
+    // Helper: stream to buffer
+    static async streamToBuffer(stream) {
+        return new Promise((resolve, reject) => {
+            const chunks = [];
+            stream.on('data', (chunk) => chunks.push(chunk));
+            stream.on('end', () => resolve(Buffer.concat(chunks)));
+            stream.on('error', reject);
+        });
     }
 }
 exports.UserController = UserController;
-const employeeQueue_1 = require("../dist/employeeQueue");
+const excelWorker_1 = require("../utils/excelWorker");
 exports.userRoute = [
     {
         method: 'POST',

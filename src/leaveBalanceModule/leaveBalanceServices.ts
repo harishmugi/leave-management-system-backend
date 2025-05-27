@@ -89,7 +89,6 @@ export class LeaveBalanceService {
     const leaveBalance = await leaveBalanceRepository.findOne({ where: { id } });
 
     if (!leaveBalance) {
-      console.log(`Leave balance with id ${id} not found`);
       return null;
     }
 
@@ -117,7 +116,6 @@ export class LeaveBalanceService {
 static async initializeLeaveBalancesForEmployee(employeeId: string, role: string) {
   const leaveTypeRepo = dataSource.getRepository(LeaveType);
   const leaveBalanceRepo = dataSource.getRepository(LeaveBalance);
-  console.log(`Initializing leave balances for employee ${employeeId} with role ${role}...`);
 
   try {
     const leaveTypes = await leaveTypeRepo.find();
@@ -137,7 +135,6 @@ static async initializeLeaveBalancesForEmployee(employeeId: string, role: string
     });
 
     await leaveBalanceRepo.save(leaveBalances);
-    console.log(`Leave balances initialized for employee ${employeeId}`);
   } catch (error) {
     console.error('Error initializing leave balances:', error);
     throw new Error(`Failed to initialize leave balances for employee ${employeeId}`);

@@ -65,7 +65,6 @@ async function handleToken(req) {
 async function login(email, password) {
     const employeeRepo = connection_1.dataSource.getRepository(userEntity_1.Employee);
     const user = await employeeRepo.findOneBy({ email });
-    console.log("user" + user);
     if (!user) {
         throw new Error('User not found');
     }
@@ -75,6 +74,5 @@ async function login(email, password) {
     }
     const role = user.role;
     const token = await (0, jwt_1.generateJwt)(user);
-    console.log("generated" + token);
     return { token, role };
 }

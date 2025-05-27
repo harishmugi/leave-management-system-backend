@@ -40,7 +40,6 @@ const leaveRequestServices_1 = require("./leaveRequestServices");
 class LeaveRequestController {
     static async getDecodedToken(request) {
         const token = request.state.token;
-        console.log('getting', token);
         if (!token)
             throw new Error('No token provided');
         try {
@@ -73,7 +72,6 @@ class LeaveRequestController {
             const decoded = await LeaveRequestController.getDecodedToken(request);
             // Get leave requests based on role
             const leaveRequests = await leaveRequestServices_1.LeaveRequestService.getLeaveRequestsForRole(decoded.userData.id);
-            console.log(leaveRequests);
             // Return the fetched leave requests
             return h.response(leaveRequests).code(200);
         }
@@ -109,7 +107,6 @@ class LeaveRequestController {
         try {
             const decoded = await LeaveRequestController.getDecodedToken(request);
             const leaveRequests = await leaveRequestServices_1.LeaveRequestService.getLeaveRequest(decoded.userData.id);
-            console.log('leaverequest', leaveRequests);
             return h.response(leaveRequests).code(200);
         }
         catch (error) {

@@ -41,7 +41,6 @@ export async function login(email: string, password: string) {
   const employeeRepo = dataSource.getRepository(Employee);
 
   const user = await employeeRepo.findOneBy({ email });
-  console.log("user" + user)
   if (!user) {
     throw new Error('User not found');
   }
@@ -53,6 +52,5 @@ export async function login(email: string, password: string) {
   const role = user.role
 
   const token = await generateJwt(user)
-  console.log("generated" + token)
   return { token, role };
 }

@@ -38,6 +38,5 @@ const bcrypt = require('bcryptjs');
 const jwt = __importStar(require("jsonwebtoken"));
 async function generateJwt(userData) {
     const token = jwt.sign({ userData }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    console.log(token + "==============================");
     return token;
 }
