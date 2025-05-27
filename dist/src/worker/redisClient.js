@@ -6,6 +6,10 @@ exports.connectRedis = connectRedis;
 const redis_1 = require("redis");
 exports.redisClient = (0, redis_1.createClient)({
     url: process.env.UPSTASH_REDIS_URL, // Use .env to store
+    socket: {
+        connectTimeout: 15000, // 15s
+        keepAlive: 30000 // keep connection open
+    }
 });
 exports.redisClient.on('error', (err) => console.error('❌ Redis error:', err));
 async function connectRedis() {
