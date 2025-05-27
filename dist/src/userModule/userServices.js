@@ -17,6 +17,11 @@ class UserService {
                 if (!manager)
                     throw new Error('Manager with the provided email does not exist.');
             }
+            if (employeeData.email) {
+                manager = await managerRepo.findOneBy({ email: employeeData.email });
+                if (!manager)
+                    throw new Error('User with this email already exist.');
+            }
             // Create employee with manager relationship only
             const employee = employeeRepository.create({
                 fullname: employeeData.fullname,
