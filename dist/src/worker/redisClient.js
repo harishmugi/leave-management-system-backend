@@ -12,7 +12,7 @@ if (!redisUrl) {
 exports.redisClient = (0, redis_1.createClient)({
     url: redisUrl,
     socket: {
-        connectTimeout: 15000, // 15 seconds to connect
+        connectTimeout: 60000, // 15 seconds to connect
         keepAlive: 30000 // Keep TCP connection alive
     }
 });
