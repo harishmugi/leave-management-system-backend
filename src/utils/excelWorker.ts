@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs';
 import { EmployeeData } from '../userModule/userServices';
-import { redisClient, connectRedis } from '../worker/redisClient';
+import { redisClient, connectRedisWithRetry} from '../worker/redisClient';
 
 function normalizeCellValue(cell: any): string {
   if (cell === null || cell === undefined) return '';
@@ -47,7 +47,7 @@ export async function parseExcel(buffer: Buffer): Promise<EmployeeData[]> {
 }
 
 export async function pushEmployeesToQueue(employees: EmployeeData[]) {
-  await connectRedis();
+  await connectRedisWithRetry();
 
   const pipeline = redisClient.multi();
 

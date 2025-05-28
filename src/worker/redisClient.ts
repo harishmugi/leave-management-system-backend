@@ -1,19 +1,47 @@
 // redisClient.ts
 import { createClient } from 'redis';
 
-export const redisClient = createClient({
-  url: process.env.UPSTASH_REDIS_URL, // Use .env to store
+const redisUrl = process.env.UPSTASH_REDIS_URL;
 
-   socket: {
-    connectTimeout: 15000, // 15s
-    keepAlive: 30000       // keep connection open
+if (!redisUrl) {
+  throw new Error('❌ Missing UPSTASH_REDIS_URL in environment variables.');
+}
+
+// Create Redis client with extended socket timeout and keep-alive
+export const redisClient = createClient({
+  url: redisUrl,
+  socket: {
+    connectTimeout: 15000, // 15 seconds to connect
+    keepAlive: 30000       // Keep TCP connection alive
   }
 });
 
-redisClient.on('error', (err) => console.error('❌ Redis error:', err));
+// Log Redis-level errors
+redisClient.on('error', (err) => {
+  console.error('❌ Redis error:', err.message);
+});
 
-export async function connectRedis() {
-  if (!redisClient.isOpen) {
-    await redisClient.connect();
+// Exported function with retry logic
+export async function connectRedisWithRetry(retries = 5) {
+  while (retries > 0) {
+    try {
+      if (!redisClient.isOpen) {
+        console.log('🔌 Connecting to Redis...');
+        await redisClient.connect();
+        console.log('✅ Redis connected');
+      }
+      break; // connected successfully
+    } catch (err: any) {
+      console.error(`❌ Redis connection failed: ${err.message}`);
+      retries--;
+
+      if (retries === 0) {
+        console.error('🚫 Out of retries. Could not connect to Redis.');
+        throw err; // Let app crash or handle as needed
+      }
+
+      console.log(`🔁 Retrying Redis connection in 3s... (${retries} retries left)`);
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
   }
 }

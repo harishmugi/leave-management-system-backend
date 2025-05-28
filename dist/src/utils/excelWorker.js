@@ -46,7 +46,7 @@ async function parseExcel(buffer) {
     return employees;
 }
 async function pushEmployeesToQueue(employees) {
-    await (0, redisClient_1.connectRedis)();
+    await (0, redisClient_1.connectRedisWithRetry)();
     const pipeline = redisClient_1.redisClient.multi();
     employees.forEach((emp) => {
         pipeline.rPush('employee_queue', JSON.stringify(emp));
