@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs';
 import { EmployeeData } from '../userModule/userServices';
-import { redisClient, connectRedisWithRetry} from '../worker/redisClient';
+import { redisClient, connectRedisWithRetry } from '../worker/redisClient';
 
 function normalizeCellValue(cell: any): string {
   if (cell === null || cell === undefined) return '';

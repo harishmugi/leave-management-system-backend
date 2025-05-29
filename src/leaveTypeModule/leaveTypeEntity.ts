@@ -10,7 +10,7 @@ import { LeaveBalance } from "../leaveBalanceModule/leaveBalanceEntity"; // Add 
 @Entity()
 export class LeaveType {
   static find(arg0: { where: { name: any; }; }) {
-      throw new Error('Method not implemented.');
+    throw new Error('Method not implemented.');
   }
   @PrimaryGeneratedColumn()
   id: number;

@@ -10,7 +10,7 @@ interface DecodedToken extends Jwt.JwtPayload {
 }
 
 export class LeaveBalanceController {
-  
+
   // CREATE LEAVE BALANCE
   static async createLeaveBalance(request: Request, h: ResponseToolkit) {
 
@@ -93,25 +93,25 @@ export class LeaveBalanceController {
       return h.response({ error: 'Failed to update leave balance' }).code(500);
     }
   }
-static async patchLeaveBalance(employeeId: string, leaveTypeId: number, daysTaken: number) {
-  const balanceRepo = dataSource.getRepository(LeaveBalance);
-  const balance = await balanceRepo.findOne({
-    where: {
-      employee_id: employeeId,
-      leave_type_id: leaveTypeId,
-    },
-  });
+  static async patchLeaveBalance(employeeId: string, leaveTypeId: number, daysTaken: number) {
+    const balanceRepo = dataSource.getRepository(LeaveBalance);
+    const balance = await balanceRepo.findOne({
+      where: {
+        employee_id: employeeId,
+        leave_type_id: leaveTypeId,
+      },
+    });
 
-  if (!balance) throw new Error('Leave balance record not found');
-  if (balance.remaining_leave < daysTaken) throw new Error('Insufficient leave balance');
+    if (!balance) throw new Error('Leave balance record not found');
+    if (balance.remaining_leave < daysTaken) throw new Error('Insufficient leave balance');
 
-  balance.remaining_leave -= daysTaken;
-  balance.used_leave += daysTaken;
+    balance.remaining_leave -= daysTaken;
+    balance.used_leave += daysTaken;
 
-  await balanceRepo.save(balance);
-  return balance.remaining_leave;
-}
-// DELETE LEAVE BALANCE
+    await balanceRepo.save(balance);
+    return balance.remaining_leave;
+  }
+  // DELETE LEAVE BALANCE
   static async deleteLeaveBalance(request: Request, h: ResponseToolkit) {
     const id = request.params.id;
 

@@ -113,54 +113,54 @@ export class LeaveBalanceService {
     }
   }
 
-static async initializeLeaveBalancesForEmployee(employeeId: string, role: string) {
-  const leaveTypeRepo = dataSource.getRepository(LeaveType);
-  const leaveBalanceRepo = dataSource.getRepository(LeaveBalance);
+  static async initializeLeaveBalancesForEmployee(employeeId: string, role: string) {
+    const leaveTypeRepo = dataSource.getRepository(LeaveType);
+    const leaveBalanceRepo = dataSource.getRepository(LeaveBalance);
 
-  try {
-    const leaveTypes = await leaveTypeRepo.find();
+    try {
+      const leaveTypes = await leaveTypeRepo.find();
 
-    const leaveBalances = leaveTypes.map(type => {
-      const balance = new LeaveBalance();
-      balance.employee_id = employeeId;
-      balance.leave_type_id = type.id;
+      const leaveBalances = leaveTypes.map(type => {
+        const balance = new LeaveBalance();
+        balance.employee_id = employeeId;
+        balance.leave_type_id = type.id;
 
-      // Get allocated leave from allocation table, default to 0 if not found
-      const allocated = leaveAllocation[role]?.[type.leave_type] ?? 0;
+        // Get allocated leave from allocation table, default to 0 if not found
+        const allocated = leaveAllocation[role]?.[type.leave_type] ?? 0;
 
-      balance.allocated_leave = allocated;
-      balance.used_leave = 0;
-      balance.remaining_leave = allocated;
-      return balance;
-    });
+        balance.allocated_leave = allocated;
+        balance.used_leave = 0;
+        balance.remaining_leave = allocated;
+        return balance;
+      });
 
-    await leaveBalanceRepo.save(leaveBalances);
-  } catch (error) {
-    console.error('Error initializing leave balances:', error);
-    throw new Error(`Failed to initialize leave balances for employee ${employeeId}`);
+      await leaveBalanceRepo.save(leaveBalances);
+    } catch (error) {
+      console.error('Error initializing leave balances:', error);
+      throw new Error(`Failed to initialize leave balances for employee ${employeeId}`);
+    }
   }
-}
 
-  
+
 
 
 
 
   // Add this method to the LeaveBalanceService class
-static async getLeaveBalanceByEmployee(employeeId: string): Promise<LeaveBalance[]> {
-  const leaveBalanceRepository = dataSource.getRepository(LeaveBalance);
+  static async getLeaveBalanceByEmployee(employeeId: string): Promise<LeaveBalance[]> {
+    const leaveBalanceRepository = dataSource.getRepository(LeaveBalance);
 
-  try {
-    // Querying the database to get all leave balances for the specified employee
-    const leaveBalances = await leaveBalanceRepository.find({
-      where: { employee_id: employeeId },
-      relations: ['leaveType'], // Assuming you want to also load the leaveType data
-    });
+    try {
+      // Querying the database to get all leave balances for the specified employee
+      const leaveBalances = await leaveBalanceRepository.find({
+        where: { employee_id: employeeId },
+        relations: ['leaveType'], // Assuming you want to also load the leaveType data
+      });
 
-    return leaveBalances;
-  } catch (error) {
-    console.error('Error fetching leave balances for employee:', error);
-    throw new Error(`Failed to get leave balances for employee with ID ${employeeId}`);
+      return leaveBalances;
+    } catch (error) {
+      console.error('Error fetching leave balances for employee:', error);
+      throw new Error(`Failed to get leave balances for employee with ID ${employeeId}`);
+    }
   }
-}
 }

@@ -55,7 +55,8 @@ export class LeaveTypeService {
 
     // Method to check if any of the leave types already exist in the database
     static async getLeaveTypesByNames(leave_types: string[]): Promise<string[]> {
-        try {const leaveTypeRepository = dataSource.getRepository(LeaveType);
+        try {
+            const leaveTypeRepository = dataSource.getRepository(LeaveType);
 
             // Fetching existing leave types from the database
             const existingLeaveTypes = leaveTypeRepository.find({
@@ -63,7 +64,7 @@ export class LeaveTypeService {
             });
 
             // Returning only the names of the existing leave types
-return (await existingLeaveTypes).map((leaveType) => leaveType.leave_type);
+            return (await existingLeaveTypes).map((leaveType) => leaveType.leave_type);
         } catch (error) {
             console.error('Error fetching leave types:', error);
             return [];  // Return an empty array if there's an error

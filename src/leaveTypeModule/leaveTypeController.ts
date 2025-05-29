@@ -6,35 +6,35 @@ import { LeaveTypeValidator } from './leaveTypeValidator';
 export class LeaveTypeController {
   // CREATE LEAVE TYPE REQUEST
   static async createLeaveType(request: Request, h: ResponseToolkit) {
-  const leaveTypeData = request.payload as { leave_type: string[] };  // Array of leave types
-  try {
-    // Validate if the leave type array is not empty
-    if (!leaveTypeData.leave_type || leaveTypeData.leave_type.length === 0) {
-      return h.response({ error: 'Leave type array cannot be empty' }).code(400);
-    }
+    const leaveTypeData = request.payload as { leave_type: string[] };  // Array of leave types
+    try {
+      // Validate if the leave type array is not empty
+      if (!leaveTypeData.leave_type || leaveTypeData.leave_type.length === 0) {
+        return h.response({ error: 'Leave type array cannot be empty' }).code(400);
+      }
 
-    // Validate if any leave types already exist in the database
-    await LeaveTypeValidator.checkLeaveTypesAlreadyExist(leaveTypeData.leave_type);
-    
-    // Map the string array to an array of LeaveTypeData objects
-    const leaveTypeDataObjects: LeaveTypeData[] = leaveTypeData.leave_type.map(leave => ({
-      leave_type: leave,
-      id: 0, // Or any default value for `id` if it's auto-generated in the database
-    }));
-    
-    // Create leave types in bulk (single DB hit)
-    const createdLeaveTypes = await LeaveTypeService.createLeaveTypesBulk(leaveTypeDataObjects);
-    
-    return h.response({ message: 'Leave types created successfully', leaveTypes: createdLeaveTypes }).code(201);
-  } catch (error) {
-    if (error.message.includes('already exists')) {
-      return h.response({ error: error.message }).code(400); 
-    }
+      // Validate if any leave types already exist in the database
+      await LeaveTypeValidator.checkLeaveTypesAlreadyExist(leaveTypeData.leave_type);
 
-    console.error('Error:', error);
-    return h.response({ error: error.message || 'Failed to create leave types' }).code(500);
+      // Map the string array to an array of LeaveTypeData objects
+      const leaveTypeDataObjects: LeaveTypeData[] = leaveTypeData.leave_type.map(leave => ({
+        leave_type: leave,
+        id: 0, // Or any default value for `id` if it's auto-generated in the database
+      }));
+
+      // Create leave types in bulk (single DB hit)
+      const createdLeaveTypes = await LeaveTypeService.createLeaveTypesBulk(leaveTypeDataObjects);
+
+      return h.response({ message: 'Leave types created successfully', leaveTypes: createdLeaveTypes }).code(201);
+    } catch (error) {
+      if (error.message.includes('already exists')) {
+        return h.response({ error: error.message }).code(400);
+      }
+
+      console.error('Error:', error);
+      return h.response({ error: error.message || 'Failed to create leave types' }).code(500);
+    }
   }
-}
 
 
   // GET LEAVE TYPES

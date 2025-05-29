@@ -26,7 +26,7 @@ export class UserService {
         manager = await managerRepo.findOneBy({ email: employeeData.managerEmail });
         if (!manager) throw new Error('Manager with the provided email does not exist.');
       }
-   if (employeeData.email) {
+      if (employeeData.email) {
         manager = await managerRepo.findOneBy({ email: employeeData.email });
         if (!manager) throw new Error('User with this email already exist.');
       }
@@ -46,7 +46,7 @@ export class UserService {
       await employeeRepository.save(employee);
 
       // Initialize leave balances
-      await LeaveBalanceService.initializeLeaveBalancesForEmployee(employee.id,employee.role);
+      await LeaveBalanceService.initializeLeaveBalancesForEmployee(employee.id, employee.role);
 
       // Generate and return JWT
       return generateJwt(employee);
@@ -61,7 +61,7 @@ export class UserService {
     try {
       const employeeRepository = dataSource.getRepository(Employee);
       return await employeeRepository.find({
-        where:{soft_delete:false},
+        where: { soft_delete: false },
         relations: ['manager'],
       });
     } catch (error) {
@@ -74,7 +74,7 @@ export class UserService {
     try {
       const employeeRepository = dataSource.getRepository(Employee);
       return await employeeRepository.findOne({
-        where: { id,soft_delete:false },
+        where: { id, soft_delete: false },
         relations: ['manager'],
       });
     } catch (error) {
@@ -109,30 +109,30 @@ export class UserService {
   }
 
 
-static async softDeleteEmployee(id:string){
+  static async softDeleteEmployee(id: string) {
 
 
     const userRepo = dataSource.getRepository(Employee);
     const employee = await userRepo.findOne({ where: { id: id } });
 
     if (!employee) {
-       throw new Error('Employee not found' );
+      throw new Error('Employee not found');
     }
 
-    employee.soft_delete =  !(employee.soft_delete);
+    employee.soft_delete = !(employee.soft_delete);
     await userRepo.save(employee);
 
-}
-static async deletedEmployees(){
+  }
+  static async deletedEmployees() {
 
 
     const userRepo = dataSource.getRepository(Employee);
-    const employees = await userRepo.find({ where: { soft_delete:true } });
+    const employees = await userRepo.find({ where: { soft_delete: true } });
 
     if (!employees) {
-       throw new Error('Employee not found' );
+      throw new Error('Employee not found');
     }
-return employees
-}
+    return employees
+  }
 
 }

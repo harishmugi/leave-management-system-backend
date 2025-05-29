@@ -73,28 +73,28 @@ export class LeaveRequestController {
         error.message === 'Unauthorized' ? 401 : 500
       );
     }
-  }static async getLeaveRequestForCalendar(request: Request, h: ResponseToolkit) {
-  const { role } = request.params;  // Access the 'role' path parameter
+  } static async getLeaveRequestForCalendar(request: Request, h: ResponseToolkit) {
+    const { role } = request.params;  // Access the 'role' path parameter
 
-  try {
-    const decoded = await LeaveRequestController.getDecodedToken(request);
-    const userId = decoded.userData.id;
+    try {
+      const decoded = await LeaveRequestController.getDecodedToken(request);
+      const userId = decoded.userData.id;
 
-    let leaveRequests;
+      let leaveRequests;
 
-    // Fetch leave requests based on the role parameter
-    if (role === 'Manager') {
-      leaveRequests = await LeaveRequestService.getLeaveRequestsForCalendar(userId);
-    } else if (role === 'HR' || role === 'Director') {
-      leaveRequests = await LeaveRequestService.getLeaveRequestAll();
+      // Fetch leave requests based on the role parameter
+      if (role === 'Manager') {
+        leaveRequests = await LeaveRequestService.getLeaveRequestsForCalendar(userId);
+      } else if (role === 'HR' || role === 'Director') {
+        leaveRequests = await LeaveRequestService.getLeaveRequestAll();
+      }
+
+      return h.response(leaveRequests).code(200);
+    } catch (error: any) {
+      console.error('Error fetching leave requests:', error);
+      return h.response({ error: 'Failed to fetch leave requests' }).code(error.message === 'Unauthorized' ? 401 : 500);
     }
-
-    return h.response(leaveRequests).code(200);
-  } catch (error: any) {
-    console.error('Error fetching leave requests:', error);
-    return h.response({ error: 'Failed to fetch leave requests' }).code(error.message === 'Unauthorized' ? 401 : 500);
   }
-}
 
 
 

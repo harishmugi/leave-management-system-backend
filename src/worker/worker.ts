@@ -7,7 +7,7 @@ const redis = createClient({ url: process.env.UPSTASH_REDIS_URL });
 redis.on('error', (err) => console.error('Redis error:', err));
 
 (async function startWorker() {
-    await dataSource.initialize(); // important!
+  await dataSource.initialize(); // important!
 
   await redis.connect();
 

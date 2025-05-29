@@ -32,8 +32,9 @@ export class LeaveRequestService {
 
     try {
       const leaveType = await leaveTypeRepository.findOne({
-        where: { id: leaveRequestData.leave_type_id
-         },
+        where: {
+          id: leaveRequestData.leave_type_id
+        },
       });
       if (!leaveType) throw new Error('Invalid leave type');
 
@@ -47,7 +48,7 @@ export class LeaveRequestService {
       // Check for overlapping leave requests
       const overlap = await leaveRequestRepository.findOne({
         where: {
-          employee: { id: leaveRequestData.employee_id,soft_delete:false },
+          employee: { id: leaveRequestData.employee_id, soft_delete: false },
           startDate: LessThanOrEqual(endDate),
           endDate: MoreThanOrEqual(startDate),
           status: Not(In([APPROVAL.Rejected, APPROVAL.Cancelled])),
@@ -58,7 +59,7 @@ export class LeaveRequestService {
 
       const days = differenceInCalendarDays(endDate, startDate) + 1;
       const employee = await userRepository.findOne({
-        where: { id: leaveRequestData.employee_id,soft_delete:false },
+        where: { id: leaveRequestData.employee_id, soft_delete: false },
         relations: ['manager'],
       });
 
@@ -84,45 +85,45 @@ export class LeaveRequestService {
       leaveRequestData.director_approval = APPROVAL.NoManager;
 
       // Determine approval based on number of leave days
-if (days <= 2) {
-  if (manager) {
-    if (managerRole === 'HR') {
-      leaveRequestData.manager_approval = APPROVAL.NoManager;
-      leaveRequestData.HR_approval = APPROVAL.Pending;
-    } else {
-      leaveRequestData.manager_approval = APPROVAL.Pending;
-    }
-  } else {
-    leaveRequestData.manager_approval = APPROVAL.NoManager;
-  }
-} else if (days > 2 && days < 5) {
-  if (manager) {
-    if (managerRole === 'HR') {
-      leaveRequestData.manager_approval = APPROVAL.NoManager;
-      leaveRequestData.HR_approval = APPROVAL.Pending;
-    } else {
-      leaveRequestData.manager_approval = APPROVAL.Pending;
-      leaveRequestData.HR_approval = APPROVAL.Pending;
-    }
-  } else {
-    leaveRequestData.manager_approval = APPROVAL.NoManager;
-    leaveRequestData.HR_approval = APPROVAL.Pending;
-  }
-} else if (days >= 5) {
-  if (managerRole === 'Director') {
-    leaveRequestData.manager_approval = APPROVAL.NoManager;
-    leaveRequestData.HR_approval = APPROVAL.Pending;
-    leaveRequestData.director_approval = APPROVAL.Pending;
-  } else if (managerRole === 'HR') {
-    leaveRequestData.manager_approval = APPROVAL.NoManager;
-    leaveRequestData.HR_approval = APPROVAL.Pending;
-    leaveRequestData.director_approval = APPROVAL.Pending;
-  } else {
-    leaveRequestData.manager_approval = APPROVAL.Pending;
-    leaveRequestData.HR_approval = APPROVAL.Pending;
-    leaveRequestData.director_approval = APPROVAL.Pending;
-  }
-}
+      if (days <= 2) {
+        if (manager) {
+          if (managerRole === 'HR') {
+            leaveRequestData.manager_approval = APPROVAL.NoManager;
+            leaveRequestData.HR_approval = APPROVAL.Pending;
+          } else {
+            leaveRequestData.manager_approval = APPROVAL.Pending;
+          }
+        } else {
+          leaveRequestData.manager_approval = APPROVAL.NoManager;
+        }
+      } else if (days > 2 && days < 5) {
+        if (manager) {
+          if (managerRole === 'HR') {
+            leaveRequestData.manager_approval = APPROVAL.NoManager;
+            leaveRequestData.HR_approval = APPROVAL.Pending;
+          } else {
+            leaveRequestData.manager_approval = APPROVAL.Pending;
+            leaveRequestData.HR_approval = APPROVAL.Pending;
+          }
+        } else {
+          leaveRequestData.manager_approval = APPROVAL.NoManager;
+          leaveRequestData.HR_approval = APPROVAL.Pending;
+        }
+      } else if (days >= 5) {
+        if (managerRole === 'Director') {
+          leaveRequestData.manager_approval = APPROVAL.NoManager;
+          leaveRequestData.HR_approval = APPROVAL.Pending;
+          leaveRequestData.director_approval = APPROVAL.Pending;
+        } else if (managerRole === 'HR') {
+          leaveRequestData.manager_approval = APPROVAL.NoManager;
+          leaveRequestData.HR_approval = APPROVAL.Pending;
+          leaveRequestData.director_approval = APPROVAL.Pending;
+        } else {
+          leaveRequestData.manager_approval = APPROVAL.Pending;
+          leaveRequestData.HR_approval = APPROVAL.Pending;
+          leaveRequestData.director_approval = APPROVAL.Pending;
+        }
+      }
 
       leaveRequestData.status = APPROVAL.Pending;
       leaveRequestData.raisedDate = new Date();
@@ -164,7 +165,7 @@ if (days <= 2) {
       // Get the manager of the employee (if any)
       if (employee.manager) {
         const manager = await dataSource.getRepository(Employee).findOne({
-          where: { id: employee.manager.id,soft_delete:false },
+          where: { id: employee.manager.id, soft_delete: false },
         });
         if (manager) approvers.push(manager);
       }
@@ -198,7 +199,7 @@ if (days <= 2) {
   static async getLeaveRequest(employeeId: string) {
     const repo = dataSource.getRepository(LeaveRequest);
     return repo.find({
-      where: { employee: { id: employeeId,soft_delete:false } },
+      where: { employee: { id: employeeId, soft_delete: false } },
       relations: ['employee', 'leaveType'],
       order: { raisedDate: 'DESC' },
     });
@@ -207,11 +208,12 @@ if (days <= 2) {
     const repo = dataSource.getRepository(LeaveRequest);
 
     // Fetch all leave requests, regardless of employee or manager
-    return repo.find({where:{
-      employee:{
-        soft_delete:false
-      }
-    },
+    return repo.find({
+      where: {
+        employee: {
+          soft_delete: false
+        }
+      },
       relations: ['employee', 'leaveType'], // Include relations with employee and leaveType
       order: { raisedDate: 'DESC' }, // Order by raisedDate in descending order
     });
@@ -224,7 +226,7 @@ if (days <= 2) {
         employee: {
           manager: {
             id: managerId,
-          }, soft_delete:false 
+          }, soft_delete: false
         },
       },
       relations: ['employee', 'leaveType'],
@@ -253,7 +255,7 @@ if (days <= 2) {
     if ([manager_approval, HR_approval, director_approval].includes(APPROVAL.Rejected)) {
       updated.status = APPROVAL.Rejected;
     } else if (
-      (manager_approval === APPROVAL.Approved || manager_approval === APPROVAL.NoManager) &&( HR_approval === APPROVAL.Approved||HR_approval === APPROVAL.NoManager) &&( director_approval === APPROVAL.Approved|| director_approval === APPROVAL.NoManager) ) {
+      (manager_approval === APPROVAL.Approved || manager_approval === APPROVAL.NoManager) && (HR_approval === APPROVAL.Approved || HR_approval === APPROVAL.NoManager) && (director_approval === APPROVAL.Approved || director_approval === APPROVAL.NoManager)) {
       const days = differenceInCalendarDays(new Date(request.endDate), new Date(request.startDate)) + 1;
 
       const balance = await LeaveBalanceController.patchLeaveBalance(
@@ -279,62 +281,64 @@ if (days <= 2) {
     return result.affected !== 0;
   }
   static async getLeaveRequestsForRole(userId: string) {
-  const repo = dataSource.getRepository(LeaveRequest);
-  const userRepo = dataSource.getRepository(Employee);
+    const repo = dataSource.getRepository(LeaveRequest);
+    const userRepo = dataSource.getRepository(Employee);
 
-  // Get the logged-in user
-  const user = await userRepo.findOne({
-    where: { id: userId },
-    relations: ['manager'],
-  });
-
-  if (!user) throw new Error('User not found');
-
-  let leaveRequests: LeaveRequest[] = [];
-
-  if (user.role === 'HR') {
-    // Fetch all leave requests where HR approval is pending
-    const allHrRequests = await repo.find({
-      where: { HR_approval: 'Pending',employee:{
-        soft_delete:false
-      } },
-      relations: ['employee', 'employee.manager', 'leaveType'],
-      order: { raisedDate: 'DESC' },
+    // Get the logged-in user
+    const user = await userRepo.findOne({
+      where: { id: userId },
+      relations: ['manager'],
     });
 
-    // Show requests where:
-    // 1. HR approval is required AND
-    // 2. HR is assigned as the manager OR user is HR by role
-    leaveRequests = allHrRequests.filter(req =>
-      req.employee.manager?.id === user.id || user.role === 'HR'
-    );
-  } else if (user.role === 'Director') {
-    // Show director approvals
-    leaveRequests = await repo.find({
-      where: { director_approval: 'Pending' },
-      relations: ['employee', 'employee.manager', 'leaveType'],
-      order: { raisedDate: 'DESC' },
-    });
-  } else if (user.role === 'Manager') {
-    // Show requests from managed employees
-    leaveRequests = await repo.find({
-      where: {
-        employee: { manager: { id: user.id } },
-      },
-      relations: ['employee', 'leaveType'],
-      order: { raisedDate: 'DESC' },
-    });
-  } else {
-    // Regular employee: only their own leave requests
-    leaveRequests = await repo.find({
-      where: { employee: { id: userId } },
-      relations: ['employee', 'leaveType'],
-      order: { raisedDate: 'DESC' },
-    });
+    if (!user) throw new Error('User not found');
+
+    let leaveRequests: LeaveRequest[] = [];
+
+    if (user.role === 'HR') {
+      // Fetch all leave requests where HR approval is pending
+      const allHrRequests = await repo.find({
+        where: {
+          HR_approval: 'Pending', employee: {
+            soft_delete: false
+          }
+        },
+        relations: ['employee', 'employee.manager', 'leaveType'],
+        order: { raisedDate: 'DESC' },
+      });
+
+      // Show requests where:
+      // 1. HR approval is required AND
+      // 2. HR is assigned as the manager OR user is HR by role
+      leaveRequests = allHrRequests.filter(req =>
+        req.employee.manager?.id === user.id || user.role === 'HR'
+      );
+    } else if (user.role === 'Director') {
+      // Show director approvals
+      leaveRequests = await repo.find({
+        where: { director_approval: 'Pending' },
+        relations: ['employee', 'employee.manager', 'leaveType'],
+        order: { raisedDate: 'DESC' },
+      });
+    } else if (user.role === 'Manager') {
+      // Show requests from managed employees
+      leaveRequests = await repo.find({
+        where: {
+          employee: { manager: { id: user.id } },
+        },
+        relations: ['employee', 'leaveType'],
+        order: { raisedDate: 'DESC' },
+      });
+    } else {
+      // Regular employee: only their own leave requests
+      leaveRequests = await repo.find({
+        where: { employee: { id: userId } },
+        relations: ['employee', 'leaveType'],
+        order: { raisedDate: 'DESC' },
+      });
+    }
+
+    return leaveRequests;
   }
-
-  return leaveRequests;
-}
 
 
 

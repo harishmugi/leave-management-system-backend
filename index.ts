@@ -91,7 +91,7 @@ dotenv.config()
 
 const init = async () => {
   const server: Server = Hapi.server({
-    host: process.env.NODE_ENV=="production" ? '0.0.0.0' : 'localhost',
+    host: process.env.NODE_ENV == "production" ? '0.0.0.0' : 'localhost',
     port: parseInt(process.env.PORT || '3000'),
     routes: {
       cors: {
@@ -99,19 +99,19 @@ const init = async () => {
           'https://leave-management-system-frontend.vercel.app',
           'https://leave-management-system-frontend-r480vqbxp-harishmugis-projects.vercel.app',
           'https://leave-management-system-frontend-psi.vercel.app'
-        ,  'https://leave-management-system-frontend-mznds8m7u-harishmugis-projects.vercel.app' // ✅ NEW ONE
-],
-        credentials:true
+          , 'https://leave-management-system-frontend-mznds8m7u-harishmugis-projects.vercel.app' // ✅ NEW ONE
+        ],
+        credentials: true
       }
     }
   });
 
-  try{
+  try {
     await dataSource.initialize();
     console.log("Database Connected");
   }
-  catch(err){
-    console.log("Database connection error",err)
+  catch (err) {
+    console.log("Database connection error", err)
     process.exit(1)
   }
 
@@ -124,11 +124,11 @@ const init = async () => {
   ])
 
   await server.start();
-  console.log("server runs on ",server.info.uri)
+  console.log("server runs on ", server.info.uri)
 };
 
-process.on('unhandledRejection',(err)=>{
-  console.error("unhandledRejection ",err)
+process.on('unhandledRejection', (err) => {
+  console.error("unhandledRejection ", err)
   process.exit(1)
 });
 

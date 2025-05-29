@@ -1,11 +1,11 @@
-import {UserService}from '../userModule/userServices'
-export class LeaveRequestValidator{
+import { UserService } from '../userModule/userServices'
+export class LeaveRequestValidator {
 
-    static async checkUserExist(employee_id:string){
-const employee=await UserService.getEmployee(employee_id)
-      if(!employee){
-        throw new Error('User does not exist');
-    }  
+    static async checkUserExist(employee_id: string) {
+        const employee = await UserService.getEmployee(employee_id)
+        if (!employee) {
+            throw new Error('User does not exist');
+        }
     }
 }
 
@@ -15,5 +15,4 @@ const employee=await UserService.getEmployee(employee_id)
 export function isValidDate(date: any): boolean {
     const parsedDate = new Date(date);
     return parsedDate instanceof Date && !isNaN(parsedDate.getTime());
-  }
-  
+}

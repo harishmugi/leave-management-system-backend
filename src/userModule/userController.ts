@@ -55,7 +55,7 @@ export class UserController {
         .state('token', token.token, {
           isHttpOnly: true,
           isSecure: true,
-          
+
           // isSecure: process.env.NODE_ENV === 'production',
           path: '/',
           ttl: 60 * 60 * 1000,
@@ -155,37 +155,37 @@ export class UserController {
   }
 
 
-// SOFT DELETE EMPLOYEE
-static async softDeleteEmployee(req: Request, h: ResponseToolkit) {
-  try {
-    const userId = req.params.id;
-    if (!userId) {
-      return h.response({ error: 'Employee ID is required' }).code(400);
+  // SOFT DELETE EMPLOYEE
+  static async softDeleteEmployee(req: Request, h: ResponseToolkit) {
+    try {
+      const userId = req.params.id;
+      if (!userId) {
+        return h.response({ error: 'Employee ID is required' }).code(400);
+      }
+      const deleted = await UserService.softDeleteEmployee(userId)
+
+      return h.response({ message: 'Employee soft-deleted successfully' }).code(200);
+    } catch (err) {
+      console.error('Soft delete error:', err);
+      return h.response({ error: 'Internal server error' }).code(500);
     }
-const deleted=await UserService.softDeleteEmployee(userId)
-
-    return h.response({ message: 'Employee soft-deleted successfully' }).code(200);
-  } catch (err) {
-    console.error('Soft delete error:', err);
-    return h.response({ error: 'Internal server error' }).code(500);
   }
-}
 
-static async deletedEmployees(req: Request, h: ResponseToolkit) {
-  try {
+  static async deletedEmployees(req: Request, h: ResponseToolkit) {
+    try {
 
-const deleted=await UserService.deletedEmployees()
+      const deleted = await UserService.deletedEmployees()
 
-    return h.response(deleted).code(200);
-  } catch (err) {
-    console.error('Soft delete error:', err);
-    return h.response({ error: 'Internal server error' }).code(500);
+      return h.response(deleted).code(200);
+    } catch (err) {
+      console.error('Soft delete error:', err);
+      return h.response({ error: 'Internal server error' }).code(500);
+    }
   }
-}
 
 
 
-  
+
 
   static async uploadHandler(request: Request, h: ResponseToolkit) {
     try {
@@ -202,7 +202,7 @@ const deleted=await UserService.deletedEmployees()
 
       if (employees.length === 0) {
         return h.response({ message: 'No valid employee data found in the file' }).code(400);
-      }      await pushEmployeesToQueue(employees);
+      } await pushEmployeesToQueue(employees);
 
       return h.response({ message: `Successfully queued ${employees.length} employees for creation.` }).code(200);
     } catch (error: any) {
@@ -212,15 +212,15 @@ const deleted=await UserService.deletedEmployees()
   }
 
 
-// Helper: stream to buffer
-static async streamToBuffer(stream: Readable): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    stream.on('data', (chunk) => chunks.push(chunk));
-    stream.on('end', () => resolve(Buffer.concat(chunks)));
-    stream.on('error', reject);
-  });
-}
+  // Helper: stream to buffer
+  static async streamToBuffer(stream: Readable): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      stream.on('data', (chunk) => chunks.push(chunk));
+      stream.on('end', () => resolve(Buffer.concat(chunks)));
+      stream.on('error', reject);
+    });
+  }
 }
 import { ServerRoute } from '@hapi/hapi';
 import { Readable } from 'typeorm/platform/PlatformTools';

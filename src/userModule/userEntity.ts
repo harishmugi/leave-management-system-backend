@@ -48,8 +48,8 @@ export class Employee {
 
   @UpdateDateColumn()
   updated_at: Date;
- @Column({default: false })
-  soft_delete:boolean;
+  @Column({ default: false })
+  soft_delete: boolean;
 
   // ✅ Virtual field for manager's email
   get managerEmail(): string | null {

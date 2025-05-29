@@ -29,7 +29,8 @@ class LeaveRequestService {
         }
         try {
             const leaveType = await leaveTypeRepository.findOne({
-                where: { id: leaveRequestData.leave_type_id
+                where: {
+                    id: leaveRequestData.leave_type_id
                 },
             });
             if (!leaveType)
@@ -185,7 +186,8 @@ class LeaveRequestService {
     static async getLeaveRequestAll() {
         const repo = connection_1.dataSource.getRepository(leaveRequestEntity_1.LeaveRequest);
         // Fetch all leave requests, regardless of employee or manager
-        return repo.find({ where: {
+        return repo.find({
+            where: {
                 employee: {
                     soft_delete: false
                 }
@@ -256,9 +258,11 @@ class LeaveRequestService {
         if (user.role === 'HR') {
             // Fetch all leave requests where HR approval is pending
             const allHrRequests = await repo.find({
-                where: { HR_approval: 'Pending', employee: {
+                where: {
+                    HR_approval: 'Pending', employee: {
                         soft_delete: false
-                    } },
+                    }
+                },
                 relations: ['employee', 'employee.manager', 'leaveType'],
                 order: { raisedDate: 'DESC' },
             });
